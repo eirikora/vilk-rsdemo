@@ -28,7 +28,7 @@
             margin-bottom: 0.5rem;
         }
         #vilkaarModal .modal-body, #nyVilkaarTypeModal .modal-body, #retningslinjeModal .modal-body {
-            max-height: 75vh; /* Økt litt for retningslinjer */
+            max-height: 75vh; 
             overflow-y: auto;
         }
         .vilkaar-item-header {
@@ -57,6 +57,10 @@
         .user-value {
             color: #0d6efd; 
             font-weight: 500; 
+        }
+        .placeholder-missing-value {
+            color: #dc3545; /* Bootstrap danger red */
+            font-style: italic;
         }
         #retningslinjeModal table { font-size: 0.9em; }
         #retningslinjeModal th, #retningslinjeModal td { padding: 0.3rem 0.5rem; border: 1px solid #dee2e6;}
@@ -124,7 +128,7 @@
 
     <!-- Modal for å legge til ny vilkårstype -->
     <div class="modal fade" id="nyVilkaarTypeModal" tabindex="-1" aria-labelledby="nyVilkaarTypeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg"> {/* Gjort litt bredere */}
+        <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="nyVilkaarTypeModalLabel">Legg til ny vilkårstype</h5>
@@ -157,7 +161,7 @@
 
     <!-- Modal for Retningslinjer -->
     <div class="modal fade" id="retningslinjeModal" tabindex="-1" aria-labelledby="retningslinjeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl"> {/* Ekstra stor modal for god plass */}
+        <div class="modal-dialog modal-xl"> 
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="retningslinjeModalLabel">Retningslinje for å Lage Nye Vilkårstyper</h5>
@@ -172,7 +176,6 @@
             </div>
         </div>
     </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -300,14 +303,12 @@
                 }
                 
                 const kjentTypeInfo = kjenteTagTyper[tagName];
-                // For entiteter, hvis id/navn ikke er spesifisert, legg til tomme strenger for å trigge UI
                 if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
                     if (!attributes.hasOwnProperty('navn')) attributes.navn = ''; 
                     if (kjentTypeInfo.idAttr && !attributes.hasOwnProperty(kjentTypeInfo.idAttr)) {
                          attributes[kjentTypeInfo.idAttr] = '';
                     }
                 } 
-                // For parametere, hvis 'verdi' ikke er spesifisert, legg til tom streng for å trigge UI
                 else if (!attributes.hasOwnProperty('verdi') && 
                          ((kjentTypeInfo && kjentTypeInfo.kategori === 'parameter') || !kjentTypeInfo)) {
                      attributes.verdi = ''; 
@@ -395,10 +396,10 @@
                     const option = document.createElement('option');
                     option.value = String(item[kjentTypeInfo.idAttr] || item[kjentTypeInfo.navnAttr]); 
                     option.textContent = unescapeHtmlEntities(item.navn);
-                    // Forhåndsvelg basert på id hvis det finnes, ellers navn (for elv/innsjø)
-                    if (attributes.id && String(attributes.id) === option.value) {
+                    if ((attributes.id && String(attributes.id) === option.value) || 
+                        (!attributes.id && attributes.navn === item.navn && (tagName === 'elv' || tagName === 'innsjø' || tagName === 'dam' || tagName === 'aktør') ) ) { 
                         option.selected = true;
-                    } else if (!attributes.id && attributes.navn === item.navn && (tagName === 'elv' || tagName === 'innsjø' || tagName === 'dam' || tagName === 'aktør') ) { 
+                    } else if (attributes.navn === item.navn && (tagName === 'anlegg' || tagName === 'aktør') && attributes.id === ''){ 
                         option.selected = true;
                     }
                     inputElement.appendChild(option);
@@ -469,12 +470,10 @@
                 let needsInput = false;
 
                 if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
-                    // Input trengs hvis 'navn' er tomt (eller 'id' for anlegg/aktør hvis de er definert som tomme)
-                    if (phData.attributes.navn === '' || (kjentTypeInfo.idAttr && phData.attributes.hasOwnProperty(kjentTypeInfo.idAttr) && phData.attributes[kjentTypeInfo.idAttr] === '')) {
+                    if (!phData.attributes.navn || (kjentTypeInfo.idAttr && !phData.attributes.id)) {
                         needsInput = true;
                     }
-                } else { // Parameter eller ukjent tag
-                    // Input trengs hvis 'verdi' mangler eller er tomt, ELLER hvis 'valg' attributt finnes (alltid dropdown)
+                } else { 
                     if (phData.attributes.valg || !phData.attributes.hasOwnProperty('verdi') || phData.attributes.verdi === '') {
                         needsInput = true;
                     }
@@ -488,7 +487,7 @@
             validateModalForm(); 
         }
         
-        function handleFormInputChange(event) { /* ... (Som før, men test grundig med nye ID-er for elv/innsjø) ... */
+        function handleFormInputChange(event) {
             const inputElement = event.target;
             const placeholderOriginalIndex = parseInt(inputElement.dataset.placeholderOriginalIndex);
             const placeholderToUpdate = currentPlaceholdersData.find(p => p.originalIndex === placeholderOriginalIndex);
@@ -522,7 +521,7 @@
             validateModalForm();
         }
 
-        function validateModalForm() { /* ... (Som før, men test grundig med nye ID-er for elv/innsjø) ... */
+        function validateModalForm() {
             let allValid = true;
             const lagreKnapp = document.getElementById('lagreVilkårKnapp');
             document.querySelectorAll('#vilkaarSkjema .error-message').forEach(span => span.textContent = '');
@@ -551,9 +550,7 @@
                     const origPhForValidation = parseRawPlaceholders(placeholderData.raw)[0]; 
                     const initialValueInTemplate = origPhForValidation.attributes[inputElement.dataset.attributeName || 'verdi'];
 
-                    const isRequired = !placeholderData.attributes.hasOwnProperty('verdi') || // Hvis verdi ikke var i malen
-                                       initialValueInTemplate === '' ||                  // Eller hvis den var tom
-                                       initialValueInTemplate === '0';                     // Eller hvis den var '0' (for tall)
+                    const isRequired = !placeholderData.attributes.hasOwnProperty('verdi') || initialValueInTemplate === '' || initialValueInTemplate === '0';
                     
                     if (isRequired && currentValue.trim() === '') { isValidField = false; errorMessage = 'Feltet er påkrevd.'; }
                     else if (inputElement.type === 'number' && currentValue.trim() !== '') {
@@ -587,7 +584,7 @@
             return allValid;
         }
         
-        function generateTextFromTemplate(templateString, filledPlaceholders, readable, withColor = false) { /* ... (som i forrige svar, med segmentbasert bygging) ... */
+        function generateTextFromTemplate(templateString, filledPlaceholders, readable, withColor = false, forModalPreview = false) {
             let segments = []; 
             let lastIndex = 0;
             const sortedPlaceholders = [...filledPlaceholders].sort((a, b) => a.originalIndex - b.originalIndex);
@@ -608,45 +605,65 @@
                 const kjentTypeInfo = kjenteTagTyper[livePhData.tagName];
 
                 if (readable) {
-                    let displayValue = `[${livePhData.tagName} mangler data]`;
-                    let isFilledValue = false;
+                    let displayValue = ''; 
+                    let isFilledValue = false; 
                     const phValue = livePhData.attributes.verdi;
                     const phNavn = livePhData.attributes.navn;
                     const phMetrikk = livePhData.attributes.metrikk || (origPhStruct.attributes && origPhStruct.attributes.metrikk);
                     const phValuta = livePhData.attributes.valuta || (origPhStruct.attributes && origPhStruct.attributes.valuta);
-
+                    
+                    let awaitsUserInput = false;
                     if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
+                        awaitsUserInput = !phNavn || phNavn.trim() === '';
+                    } else { 
+                        awaitsUserInput = (phValue === undefined || String(phValue).trim() === '' || 
+                                          (phValue === '0' && origPhStruct.attributes.verdi === '0' && !livePhData.attributes.valg && !phValuta));
+                        if(livePhData.attributes.valg && !phValue) awaitsUserInput = true; 
+                    }
+
+                    if (awaitsUserInput && forModalPreview) { 
+                        let missingText = `?${livePhData.tagName}?`;
+                        if (kjentTypeInfo && kjentTypeInfo.kategori === 'parameter') { 
+                             if (phMetrikk) missingText += ` [${phMetrikk}]`; 
+                             else if (phValuta) missingText += ` (${phValuta})`;
+                        }
+                        replacementContent = `<span class="placeholder-missing-value">${escapeHtmlMinimal(missingText)}</span>`;
+                    
+                    } else if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
                         displayValue = phNavn || `[${livePhData.tagName} ikke valgt]`;
                         if (phNavn && phNavn.trim() !== '') isFilledValue = true;
-                    } else {
-                        if (phValue !== undefined) {
-                            if (phValuta && String(phValue).trim() !== '') {
+                        replacementContent = escapeHtmlMinimal(unescapeHtmlEntities(displayValue));
+                    } else { 
+                        if (phValue !== undefined && String(phValue).trim() !== '') { 
+                            isFilledValue = true;
+                            if (phValuta) {
                                 displayValue = formatCurrency(phValue, phValuta);
                             } else {
                                 displayValue = phValue;
-                                if (String(phValue).trim() !== '' && phMetrikk) { 
+                                if (phMetrikk) { 
                                     displayValue += ` ${phMetrikk}`;
                                 }
                             }
-                            if (String(phValue).trim() !== '' || 
-                                (origPhStruct.attributes && (origPhStruct.attributes.verdi === '0' || origPhStruct.attributes.verdi === '' || !origPhStruct.attributes.hasOwnProperty('verdi') ))
-                               ) {
-                                isFilledValue = true;
-                            }
-                        } 
-                        else if (phNavn !== undefined) { 
-                            displayValue = phNavn;
-                            if (String(phNavn).trim() !== '') isFilledValue = true;
-                        } 
-                        else {
-                            displayValue = `[${livePhData.tagName}]`;
+                        } else if (phValue === '' && phValue !== undefined && !forModalPreview) { 
+                             displayValue = ''; 
+                             if (phMetrikk) displayValue = ` ${phMetrikk}`; 
+                             else if (phValuta) displayValue = ` ${phValuta} 0,-`;
+                             isFilledValue = true; 
                         }
+                        else if (phNavn !== undefined && String(phNavn).trim() !== '') { 
+                            displayValue = phNavn;
+                            isFilledValue = true; 
+                        } 
+                        else if (awaitsUserInput && !forModalPreview) { 
+                             displayValue = `[${livePhData.tagName} mangler verdi]`;
+                        }
+                        else {
+                             displayValue = `[${livePhData.tagName}]`; 
+                        }
+                        replacementContent = escapeHtmlMinimal(unescapeHtmlEntities(displayValue));
                     }
                     
-                    let unescapedDisplayValue = unescapeHtmlEntities(displayValue);
-                    replacementContent = escapeHtmlMinimal(unescapedDisplayValue);
-
-                    if (withColor && isFilledValue && String(replacementContent).trim() !== '' && !replacementContent.startsWith('[')) {
+                    if (withColor && isFilledValue && !replacementContent.includes('placeholder-missing-value') && String(replacementContent).trim() !== '' && !replacementContent.startsWith('[') && !replacementContent.startsWith('?')) {
                         replacementContent = `<span class="user-value">${replacementContent}</span>`;
                     }
                 } else { 
@@ -668,10 +685,10 @@
             return segments.join('');
         }
         
-        function updateLivePreview() { /* ... (som før) ... */
+        function updateLivePreview() { 
              const livePreviewDiv = document.getElementById('livePreview');
             if (livePreviewDiv) {
-                livePreviewDiv.innerHTML = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true);
+                livePreviewDiv.innerHTML = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true, true);
             }
             const rawPreviewDiv = document.getElementById('rawPreview');
             if (rawPreviewDiv) {
@@ -680,7 +697,7 @@
             }
         }
         
-        document.getElementById('leggTilVilkårKnapp').addEventListener('click', () => { /* ... (som før, med justert requiresModal) ... */
+        document.getElementById('leggTilVilkårKnapp').addEventListener('click', () => {
             const selectedTypeId = document.getElementById('vilkaarTypeSelect').value;
             const selectedType = vilkaarstyper.find(type => type.id === selectedTypeId);
             if (!selectedType) { alert("Vennligst velg en vilkårstype."); return; }
@@ -691,21 +708,19 @@
             let requiresModal = initialPlaceholders.some(ph => {
                 const kjentType = kjenteTagTyper[ph.tagName];
                 if (kjentType && kjentType.kategori === 'entitet') {
-                    return !ph.attributes.navn || (kjentType.idAttr && !ph.attributes.id);
+                    return ph.attributes.navn === '' || (kjentType.idAttr && ph.attributes[kjentType.idAttr] === '');
                 }
-                // For parameter, krever modal hvis 'verdi' ikke er forhåndsutfylt, ELLER hvis 'valg' er spesifisert
-                return ph.attributes.valg || !ph.attributes.hasOwnProperty('verdi') || ph.attributes.verdi === '';
+                return ph.attributes.valg || ph.attributes.verdi === '';
             });
 
             if (initialPlaceholders.length === 0) requiresModal = false;
-
 
             if (!requiresModal) { 
                 const listItemId = `vilkaar-item-${nextVilkårInstanceId++}`;
                 const listItem = document.createElement('div');
                 listItem.className = 'list-group-item mb-3 p-3 shadow-sm';
                 listItem.id = listItemId;
-                const readableHtml = generateTextFromTemplate(currentTemplateString, initialPlaceholders, true, true);
+                const readableHtml = generateTextFromTemplate(currentTemplateString, initialPlaceholders, true, true, false); 
 
                 listItem.innerHTML = `
                     <div class="vilkaar-item-header">
@@ -729,7 +744,7 @@
                     activeTooltips = activeTooltips.filter(t => t._element !== listItem);
                 });
                 document.getElementById('vilkaarListe').appendChild(listItem);
-                if(initialPlaceholders.length > 0 && initialPlaceholders.some(ph => Object.keys(ph.attributes).length > 0)) initTooltips();
+                if(initialPlaceholders.length > 0 && initialPlaceholders.some(ph => Object.keys(ph.attributes).length > 0 && (ph.attributes.navn || ph.attributes.hasOwnProperty('verdi')))) initTooltips();
             } else { 
                 currentPlaceholdersData = JSON.parse(JSON.stringify(initialPlaceholders)); 
                 currentSelectedVilkårType = selectedType;
@@ -740,14 +755,14 @@
             }
         });
 
-        document.getElementById('lagreVilkårKnapp').addEventListener('click', () => { /* ... (som før, med .hide() på slutten) ... */
+        document.getElementById('lagreVilkårKnapp').addEventListener('click', () => {
              if (!validateModalForm() || !currentSelectedVilkårType) return;
             const listItemId = `vilkaar-item-${nextVilkårInstanceId++}`;
             const listItem = document.createElement('div');
             listItem.className = 'list-group-item mb-3 p-3 shadow-sm';
             listItem.id = listItemId;
 
-            const readableHtmlForDisplay = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true);
+            const readableHtmlForDisplay = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true, false); 
             const logicalRawString = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
             const rawTextForTooltip = logicalRawString.replace(/&lt;/g, '<').replace(/>/g, '>').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
 
@@ -773,11 +788,12 @@
             document.getElementById('vilkaarListe').appendChild(listItem);
             initTooltips(); 
             
+            const modalSkjemaVar = currentSelectedVilkårType; 
             currentSelectedVilkårType = null; 
-            vilkaarModalInstance.hide(); // Sørg for at denne kalles
+            if (modalSkjemaVar) vilkaarModalInstance.hide(); 
         });
         
-        document.getElementById('vilkaarModal').addEventListener('hidden.bs.modal', function () { /* ... (som før) ... */
+        document.getElementById('vilkaarModal').addEventListener('hidden.bs.modal', function () {
             if (currentSelectedVilkårType) { 
                 currentTemplateString = ''; 
                 currentPlaceholdersData = []; 
@@ -788,7 +804,6 @@
             }
         });
 
-        // --- Ny Vilkårstype Modal & Retningslinje Modal ---
         const nyVilkaarNavnInput = document.getElementById('nyVilkaarNavn');
         const nyVilkaarTemplateInput = document.getElementById('nyVilkaarTemplate');
         const nyVilkaarNavnError = document.getElementById('nyVilkaarNavnError');
@@ -810,8 +825,8 @@
                 </ul>
                 <h5>3. Entitets-Tags</h5>
                 <p>Systemet lager en dropdown hvis <code>navn</code> (og <code>id</code> for <code>anlegg</code>/<code>aktør</code>) mangler i malen. For å låse verdien, spesifiser <code>navn</code> (og evt. <code>id</code>).</p>
-                <table class="table table-sm">
-                    <thead><tr><th>Tag</th><th>For Brukervalg</th><th>For Fastsatt Verdi</th></tr></thead>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>Tag</th><th>For Brukervalg (Dropdown)</th><th>For Fastsatt Verdi (Låst)</th></tr></thead>
                     <tbody>
                         <tr><td><code>anlegg</code></td><td><code>&lt;anlegg type='vannkraft'&gt;</code></td><td><code>&lt;anlegg navn='Navn' id='123' type='vannkraft'&gt;</code></td></tr>
                         <tr><td><code>aktør</code></td><td><code>&lt;aktør&gt;</code></td><td><code>&lt;aktør navn='Konsesjonær A'&gt;</code></td></tr>
@@ -824,8 +839,8 @@
 
                 <h5>4. Parameter-Tags</h5>
                 <p>Systemet lager et inputfelt for <code>verdi</code> hvis det ikke er spesifisert i malen. For å låse verdien, skriv <code>verdi='dinVerdi'</code>.</p>
-                <table class="table table-sm">
-                    <thead><tr><th>Eksempel i Mal</th><th>Resultat i UI</th></tr></thead>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>Eksempel i Mal</th><th>Resultat i UI</th></tr></thead>
                     <tbody>
                         <tr><td><code>&lt;beløp valuta='kr'&gt;</code></td><td>Input for beløp i kr.</td></tr>
                         <tr><td><code>&lt;frist metrikk='år' min=1 max=5&gt;</code></td><td>Input for tall (år, 1-5).</td></tr>
@@ -847,7 +862,7 @@
         }
 
 
-        function validateNyVilkaarTypeForm() { /* ... (som før) ... */
+        function validateNyVilkaarTypeForm() {
             let i=true;nyVilkaarNavnError.textContent='';nyVilkaarTemplateError.textContent='';
             if(nyVilkaarNavnInput.value.trim()===''){nyVilkaarNavnError.textContent='Vilkårsnavn kan ikke være tomt.';i=false;}
             if(nyVilkaarTemplateInput.value.trim()===''){nyVilkaarTemplateError.textContent='Vilkårsråtekst kan ikke være tomt.';i=false;}
@@ -859,13 +874,13 @@
         document.getElementById('aapneNyVilkaarTypeModalKnapp').addEventListener('click', () => {
             if(!nyVilkaarTypeModalInstance)nyVilkaarTypeModalInstance=new bootstrap.Modal(document.getElementById('nyVilkaarTypeModal'));
             document.getElementById('nyVilkaarTypeSkjema').reset();
-            nyVilkaarTemplateInput.value = defaultNyVilkaarTemplate; // Pre-populer
+            nyVilkaarTemplateInput.value = defaultNyVilkaarTemplate; 
             nyVilkaarNavnError.textContent='';nyVilkaarTemplateError.textContent='';
             lagreNyVilkaarTypeKnapp.disabled=true;nyVilkaarTypeModalInstance.show();
         });
 
         document.getElementById('aapneRetningslinjeModalKnapp').addEventListener('click', () => {
-            setRetningslinjeInnhold(); // Fyll innhold dynamisk
+            setRetningslinjeInnhold(); 
             if(!retningslinjeModalInstance) retningslinjeModalInstance = new bootstrap.Modal(document.getElementById('retningslinjeModal'));
             retningslinjeModalInstance.show();
         });
@@ -876,7 +891,7 @@
             vilkaarstyper.push({id:n,label:t,template:e});populateVilkaarTypeSelect(true);nyVilkaarTypeModalInstance.hide();
         });
         
-        function initTooltips() { /* ... (som før) ... */
+        function initTooltips() {
             activeTooltips.forEach(tooltip => tooltip.dispose()); activeTooltips = [];
             const tt = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tt.forEach(e => activeTooltips.push(new bootstrap.Tooltip(e, {html:true,sanitize:false,trigger:'hover'})));
