@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Vilkårsgenerator</title>
+    <title>Vilkårsgenerator - Gen II Demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding-top: 1rem; padding-bottom: 2rem; }
@@ -27,8 +27,8 @@
             white-space: pre-wrap;
             margin-bottom: 0.5rem;
         }
-        #vilkaarModal .modal-body, #nyVilkaarTypeModal .modal-body {
-            max-height: 70vh;
+        #vilkaarModal .modal-body, #nyVilkaarTypeModal .modal-body, #retningslinjeModal .modal-body {
+            max-height: 75vh; /* Økt litt for retningslinjer */
             overflow-y: auto;
         }
         .vilkaar-item-header {
@@ -58,13 +58,16 @@
             color: #0d6efd; 
             font-weight: 500; 
         }
+        #retningslinjeModal table { font-size: 0.9em; }
+        #retningslinjeModal th, #retningslinjeModal td { padding: 0.3rem 0.5rem; border: 1px solid #dee2e6;}
+        #retningslinjeModal code { font-size: 0.95em; padding: 0.1em 0.3em; background-color: #e9ecef; border-radius: 0.2em;}
     </style>
 </head>
 <body>
     <div class="container">
         <header class="mb-4">
-            <h1>Vilkårsgenerator Demo</h1>
-            <p class="lead">Demonstrasjon av hvordan generiske vilkårstyper med XML-lignende placeholders kan fylles ut via et brukervennlig grensesnitt.</p>
+            <h1>Vilkårsgenerator - Gen II Demo</h1>
+            <p class="lead">Demonstrasjon av en forbedret metode for å generere vilkår basert på maler med enklere placeholder-syntaks og sentralisert typekonfigurasjon.</p>
         </header>
 
         <div class="row">
@@ -121,7 +124,7 @@
 
     <!-- Modal for å legge til ny vilkårstype -->
     <div class="modal fade" id="nyVilkaarTypeModal" tabindex="-1" aria-labelledby="nyVilkaarTypeModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg"> {/* Gjort litt bredere */}
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="nyVilkaarTypeModalLabel">Legg til ny vilkårstype</h5>
@@ -141,9 +144,30 @@
                         </div>
                     </form>
                 </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-info" id="aapneRetningslinjeModalKnapp">Retningslinje for maler</button>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                        <button type="button" id="lagreNyVilkaarTypeKnapp" class="btn btn-primary">Legg til</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Retningslinjer -->
+    <div class="modal fade" id="retningslinjeModal" tabindex="-1" aria-labelledby="retningslinjeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl"> {/* Ekstra stor modal for god plass */}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="retningslinjeModalLabel">Retningslinje for å Lage Nye Vilkårstyper</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Lukk"></button>
+                </div>
+                <div class="modal-body" id="retningslinjeInnhold">
+                    <!-- Innhold fylles av JavaScript -->
+                </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
-                    <button type="button" id="lagreNyVilkaarTypeKnapp" class="btn btn-primary">Legg til</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Lukk</button>
                 </div>
             </div>
         </div>
@@ -152,165 +176,114 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // --- DATAMODELLER ---
         let vilkaarstyper = [ 
-            {
-                id: "konsesjonsavgifter",
-                label: "Konsesjonsavgifter",
-                template: "Det skal betales en årlig avgift til staten på <beløp valuta='kr' verdi=0> pr. nat.hk og de kommuner og fylkeskommuner som Kongen bestemmer på <beløp valuta='kr' verdi=0> pr. nat.hk. Satsene refererer seg til det som opprinnelig ble fastsatt ved kgl.res. av <dato format='dd.mm.åååå'>."
-            },
-            {
-                id: "minstevannforing",
-                label: "Minstevannsføring inntak",
-                template: "Det skal for kraftanlegg <anlegg type='vannkraft' id='' navn=''> slippes en minstevannføring forbi inntaket på <vannføring type='minstevannføring' metrikk='l/s' verdi=0> hele året."
-            },
-            {
-                id: "maksimalhoyde",
-                label: "Utforming, maksimal høyde",
-                template: "Maksimal høyde på vindkraftsanlegg <anlegg type='vindkraft' id='' navn=''> er <høyde type='maksimal høyde over bakken' metrikk='meter over bakken' verdi=0>."
-            },
-            {
-                id: "byggefrister",
-                label: "Byggefrister",
-                template: "Arbeidet med det konsesjonsgitte tiltaket må påbegynnes innen <byggestartfrist metrikk='år' min=1 max=10> fra konsesjonen ble gitt og fullføres innen ytterligere <byggesluttfrist metrikk='år' min=1 max=10>. Fristene kan forlenges av NVE. I fristene medregnes ikke den tid som på grunn av ekstraordinære forhold (force majeure) har vært umulig å utnytte."
-            },
-            {
-                id: "bygging",
-                label: "Bygging",
-                template: "Anlegget skal være ferdigstilt, bygget i henhold til denne konsesjonen og satt i drift innen <driftstartfrist metrikk='år' min=2 max=10> fra endelig konsesjon. Konsesjonæren kan søke om forlengelse av fristen for ferdigstillelse, bygging og idriftsettelse. Slik søknad skal sendes senest seks måneder før utløpet av fristen. Konsesjonen bortfaller dersom fristen for bygging, ferdigstillelse og idriftsettelse ikke overholdes."
-            },
-            {
-                id: "endring",
-                label: "Endring av konsesjon",
-                template: "NVE kan fastsette nye vilkår for anlegget dersom det foreligger sterke samfunnsmessige interesser."
-            },
-			{
-                id: "tappevann",
-                label: "Tappe vann",
-                template: "<anlegg type='vannkraft' > gis løyve til å tappe inntil <slukeevne metrikk='l/s'> i sommerhalvåret og <slukeevne metrikk='l/s'> i vinterhalvåret fra elva <elv navn=''>."
-            },
-            {
-                id: "regulering_vannstand",
-                label: "Regulering av vannstand",
-                template: "Konsesjonær er pliktig til å regulere vannstanden i <innsjø navn=''> mellom høyeste regulerte vannstand (HRV) <vannstand metrikk='moh' type='høyeste' verdi=0> og laveste regulerte vannstand (LRV) <vannstand metrikk='moh' type='laveste' verdi=0>. Brudd på dette vilkåret bøtelegges med <beløp valuta='kr' verdi=0> per dag."
-            },
-			{
-                id: "detaljplan",
-                label: "Detaljplan",
-                template: "Anlegget skal bygges, drives, vedlikeholdes og nedlegges i henhold til en detaljplan som utarbeides av konsesjonæren og godkjennes av NVE før anleggsstart. Planen skal utarbeides i samsvar med NVEs veileder om utarbeidelse av detaljplan for anlegg med konsesjon etter energiloven. <aktør id='' navn=''> skal utarbeide planen i kontakt med berørt kommune, grunneiere og andre rettighetshavere. Planen skal gjøres kjent for entreprenører. Konsesjonæren har ansvaret for at planen følges.				Anlegget skal til enhver tid holdes i tilfredsstillende driftsmessig stand i henhold til detaljplanen og eventuelt andre vilkår/planer.	Konsesjonæren skal foreta en forsvarlig opprydding og istandsetting av anleggsområdene, som skal være ferdig senest to år etter at anlegget eller deler av anlegget er satt i drift."
-            },
-            {
-                id: "tilbakekallelse",
-                label: "Tilbakekallelse av konsesjon",
-                template: "Konsesjonen kan trekkes tilbake dersom konsesjonæren tas under konkursbehandling, …"
-            }
+            { id: "konsesjonsavgifter", label: "Konsesjonsavgifter", template: "Det skal betales en årlig avgift til staten på <beløp valuta='kr'> pr. nat.hk og de kommuner og fylkeskommuner som Kongen bestemmer på <beløp valuta='kr'> pr. nat.hk. Satsene refererer seg til det som opprinnelig ble fastsatt ved kgl.res. av <dato format='dd.mm.åååå'>."},
+            { id: "minstevannforing", label: "Minstevannsføring inntak", template: "Det skal for kraftanlegg <anlegg type='vannkraft'> slippes en <vannføring type='minstevannføring' metrikk='l/s'> hele året."},
+            { id: "maksimalhoyde", label: "Utforming, maksimal høyde", template: "Maksimal høyde på vindkraftsanlegg <anlegg type='vindkraft'> er <høyde type='maksimal høyde over bakken' metrikk='meter over bakken'>."},
+            { id: "byggefrister", label: "Byggefrister", template: "Arbeidet med det konsesjonsgitte tiltaket må påbegynnes innen <frist metrikk='år' min=1 max=10> fra konsesjonen ble gitt og fullføres innen ytterligere <frist metrikk='år' min=1 max=10>. Fristene kan forlenges av NVE. I fristene medregnes ikke den tid som på grunn av ekstraordinære forhold (force majeure) har vært umulig å utnytte."},
+            { id: "bygging", label: "Bygging", template: "Anlegget skal være ferdigstilt, bygget i henhold til denne konsesjonen og satt i drift innen <frist metrikk='år' min=2 max=10> fra endelig konsesjon. Konsesjonæren kan søke om forlengelse av fristen for ferdigstillelse, bygging og idriftsettelse. Slik søknad skal sendes senest seks måneder før utløpet av fristen. Konsesjonen bortfaller dersom fristen for bygging, ferdigstillelse og idriftsettelse ikke overholdes."},
+            { id: "endring", label: "Endring av konsesjon", template: "NVE kan fastsette nye vilkår for anlegget dersom det foreligger sterke samfunnsmessige interesser."},
+			{ id: "tappevann", label: "Tappe vann", template: "<anlegg type='vannkraft'> gis løyve til å tappe inntil <slukeevne metrikk='l/s'> i sommerhalvåret og <slukeevne metrikk='l/s'> i vinterhalvåret fra elva <elv>."},
+            { id: "regulering_vannstand", label: "Regulering av vannstand", template: "Konsesjonær er pliktig til å regulere vannstanden i <innsjø> mellom høyeste regulerte vannstand (HRV) <vannstand metrikk='moh' type='høyeste'> og laveste regulerte vannstand (LRV) <vannstand metrikk='moh' type='laveste'>. Brudd på dette vilkåret bøtelegges med <beløp valuta='kr'> per dag."},
+			{ id: "detaljplan", label: "Detaljplan", template: "Anlegget skal bygges, drives, vedlikeholdes og nedlegges i henhold til en detaljplan som utarbeides av konsesjonæren og godkjennes av NVE før anleggsstart. Planen skal utarbeides i samsvar med NVEs veileder om utarbeidelse av detaljplan for anlegg med konsesjon etter energiloven. <aktør> skal utarbeide planen i kontakt med berørt kommune, grunneiere og andre rettighetshavere. Planen skal gjøres kjent for entreprenører. Konsesjonæren har ansvaret for at planen følges.				Anlegget skal til enhver tid holdes i tilfredsstillende driftsmessig stand i henhold til detaljplanen og eventuelt andre vilkår/planer.	Konsesjonæren skal foreta en forsvarlig opprydding og istandsetting av anleggsområdene, som skal være ferdig senest to år etter at anlegget eller deler av anlegget er satt i drift."},
+            { id: "tilbakekallelse", label: "Tilbakekallelse av konsesjon", template: "Konsesjonen kan trekkes tilbake dersom konsesjonæren tas under konkursbehandling, …"}
         ];
 
         const fiktiveAnlegg = [
-          { id: 9601,  navn: "Nye Aunfoss kraftverk",                     type: "vannkraft" },
-          { id: 9600,  navn: "Nye Tunnsjødal kraftverk",                  type: "vannkraft" },
-          { id: 8804,  navn: "Langerud koblingsstasjon og kaianlegg",     type: "kraftledning" },
-          { id: 284,   navn: "Råholt – Fjernvarmeanlegg",                 type: "fjernvarme" },
-          { id: 19322, navn: "Omlegging 66 kV mellom Verdal S – Ørin",    type: "kraftledning" },
-          { id: 12975, navn: "132 kV Bevergrenda – Stengelsrud – Glabak", type: "kraftledning" },
-          { id: 9146,  navn: "Oterholtfoss kraftverk",                    type: "vannkraft" },
-          { id: 20446, navn: "Nøkleby solkraftverk",                      type: "solkraft" },
-		  { id: 20447, navn: "Oslo sentrum solkraftverk",                 type: "solkraft" },
-          { id: 18246, navn: "Strømforsyning Fossvatn og Seltuftvatn",    type: "kraftledning" },
-          { id: 9364,  navn: "Nedlegging av Sævik dam",                   type: "dam" },
-          { id: 3655,  navn: "Grunnvannsuttak i Mølmannsdalen",           type: "vannuttak" },
-          { id: 20411, navn: "Slettefjellet solkraftverk",                type: "solkraft" },
-          { id: 19376, navn: "Hensåsen solkraftverk",                     type: "solkraft" },
-          { id: 20500, navn: "Toppåsen Vindkraftpark",                    type: "vindkraft" },
-		  { id: 20501, navn: "Indredal vifter og strøm",                  type: "vindkraft" }
+          { id: 9601,  navn: "Nye Aunfoss kraftverk", type: "vannkraft" }, { id: 9600, navn: "Nye Tunnsjødal kraftverk", type: "vannkraft" },
+          { id: 8804, navn: "Langerud koblingsstasjon og kaianlegg", type: "kraftledning" }, { id: 284, navn: "Råholt – Fjernvarmeanlegg", type: "fjernvarme" },
+          { id: 19322, navn: "Omlegging 66 kV mellom Verdal S – Ørin", type: "kraftledning" }, { id: 12975, navn: "132 kV Bevergrenda – Stengelsrud – Glabak", type: "kraftledning" },
+          { id: 9146,  navn: "Oterholtfoss kraftverk", type: "vannkraft" }, { id: 20446, navn: "Nøkleby solkraftverk", type: "solkraft" },
+		  { id: 20447, navn: "Oslo sentrum solkraftverk", type: "solkraft" }, { id: 18246, navn: "Strømforsyning Fossvatn og Seltuftvatn", type: "kraftledning" },
+          { id: 9364,  navn: "Nedlegging av Sævik dam", type: "dam" }, { id: 3655, navn: "Grunnvannsuttak i Mølmannsdalen", type: "vannuttak" },
+          { id: 20411, navn: "Slettefjellet solkraftverk", type: "solkraft" }, { id: 19376, navn: "Hensåsen solkraftverk", type: "solkraft" },
+          { id: 20500, navn: "Toppåsen Vindkraftpark", type: "vindkraft" }, { id: 20501, navn: "Indredal vifter og strøm", type: "vindkraft" }
         ];
         
         const fiktiveElver = [
-            { id: "Glomma", navn: "Glomma" }, { id: "Pasvikelva og Ivalojoki", navn: "Pasvikelva og Ivalojoki" },
-            { id: "Numedalslågen", navn: "Numedalslågen" }, { id: "Gudbrandsdalslågen og Vorma", navn: "Gudbrandsdalslågen og Vorma" },
-            { id: "Tana", navn: "Tana" }, { id: "Drammensvassdraget", navn: "Drammensvassdraget" },
-            { id: "Skiensvassdraget", navn: "Skiensvassdraget" }, { id: "Otra", navn: "Otra" },
-            { id: "Altaelva", navn: "Altaelva" }, { id: "Trysilelva og Klarälven", navn: "Trysilelva og Klarälven" },
-            { id: "Namsen", navn: "Namsen" }, { id: "Hallingdalselva og Snarumselva", navn: "Hallingdalselva og Snarumselva" },
-            { id: "Arendalsvassdraget", navn: "Arendalsvassdraget" }, { id: "Orkla", navn: "Orkla" },
-            { id: "Rena", navn: "Rena" }, { id: "Vefsna", navn: "Vefsna" },
-            { id: "Nea-Nidelvvassdraget", navn: "Nea-Nidelvvassdraget" }, { id: "Gaula", navn: "Gaula" },
-            { id: "Målselva", navn: "Målselva" }, { id: "Karasjohka", navn: "Karasjohka" }
+            { id: 1, navn: "Glomma" }, { id: 2, navn: "Pasvikelva og Ivalojoki" }, { id: 3, navn: "Numedalslågen" }, 
+            { id: 4, navn: "Gudbrandsdalslågen og Vorma" }, { id: 5, navn: "Tana" }, { id: 6, navn: "Drammensvassdraget" },
+            { id: 7, navn: "Skiensvassdraget" }, { id: 8, navn: "Otra" }, { id: 9, navn: "Altaelva" }, 
+            { id: 10, navn: "Trysilelva og Klarälven" }, { id: 11, navn: "Namsen" }, { id: 12, navn: "Hallingdalselva og Snarumselva" },
+            { id: 13, navn: "Arendalsvassdraget" }, { id: 14, navn: "Orkla" }, { id: 15, navn: "Rena" }, 
+            { id: 16, navn: "Vefsna" }, { id: 17, navn: "Nea-Nidelvvassdraget" }, { id: 18, navn: "Gaula" },
+            { id: 19, navn: "Målselva" }, { id: 20, navn: "Karasjohka" }
         ];
 
         const fiktiveInnsjoer = [ 
-            { id: "Mjøsa", navn: "Mjøsa" }, { id: "Røssvatnet", navn: "Røssvatnet" },
-            { id: "Femunden", navn: "Femunden" }, { id: "Randsfjorden", navn: "Randsfjorden" },
-            { id: "Tyrifjorden", navn: "Tyrifjorden" }, { id: "Snåsavatnet", navn: "Snåsavatnet" },
-            { id: "Tunnsjøen", navn: "Tunnsjøen" }, { id: "Limingen", navn: "Limingen" },
-            { id: "Øyeren", navn: "Øyeren" }, { id: "Blåsjø", navn: "Blåsjø" },
-            { id: "Altevatnet", navn: "Altevatnet" }, { id: "Nisser", navn: "Nisser" },
-            { id: "Siiddašjávri", navn: "Siiddašjávri / Sijdasjavre" }, { id: "Selbusjøen", navn: "Selbusjøen" },
-            { id: "Storsjøen (i Rendalen)", navn: "Storsjøen (i Rendalen)" }, { id: "Krøderen", navn: "Krøderen" },
-            { id: "Sperillen", navn: "Sperillen" }, { id: "Lundevatnet", navn: "Lundevatnet" },
-            { id: "Storglomvatnet", navn: "Storglomvatnet" }, { id: "Aursunden", navn: "Aursunden" }
+            { id: 101, navn: "Mjøsa" }, { id: 102, navn: "Røssvatnet" }, { id: 103, navn: "Femunden" }, 
+            { id: 104, navn: "Randsfjorden" }, { id: 105, navn: "Tyrifjorden" }, { id: 106, navn: "Snåsavatnet" },
+            { id: 107, navn: "Tunnsjøen" }, { id: 108, navn: "Limingen" }, { id: 109, navn: "Øyeren" }, 
+            { id: 110, navn: "Blåsjø" }, { id: 111, navn: "Altevatnet" }, { id: 112, navn: "Nisser" },
+            { id: 113, navn: "Siiddašjávri / Sijdasjavre" }, { id: 114, navn: "Selbusjøen" }, { id: 115, navn: "Storsjøen (i Rendalen)" }, 
+            { id: 116, navn: "Krøderen" }, { id: 117, navn: "Sperillen" }, { id: 118, navn: "Lundevatnet" },
+            { id: 119, navn: "Storglomvatnet" }, { id: 120, navn: "Aursunden" }
         ];
+        const aktørerData = [{id: "Konsesjonær", navn: "Konsesjonær"}, {id: "Tiltakshaver", navn: "Tiltakshaver"}];
 
+        const kjenteTagTyper = {
+            "anlegg": { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveAnlegg", idAttr: "id", navnAttr: "navn" },
+            "aktør":  { kategori: "entitet", uiType: "dropdown", dataSourceName: "aktørerData", idAttr: "id", navnAttr: "navn" },
+            "elv":    { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveElver", idAttr: "id", navnAttr: "navn" },
+            "innsjø": { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveInnsjoer", idAttr: "id", navnAttr: "navn" },
+            "dam":    { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveInnsjoer", idAttr: "id", navnAttr: "navn" }, 
+            
+            "beløp":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "valuta" },
+            "dato":       { kategori: "parameter", uiType: "datePicker", standardFormatAttr: "format" },
+            "frist":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
+            "vannføring": { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
+            "vannstand":  { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
+            "slukeevne":  { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
+            "høyde":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
+            "tekstfelt":  { kategori: "parameter", uiType: "textInput" }
+        };
+
+        const dataKilder = { fiktiveAnlegg, fiktiveElver, fiktiveInnsjoer, aktørerData };
 
         let currentTemplateString = '';
-        let currentPlaceholdersData = [];
+        let currentPlaceholdersData = []; 
         let currentSelectedVilkårType = null;
         let nextVilkårInstanceId = 0;
         let nesteEgendefinertId = 10000; 
         let vilkaarModalInstance = null;
         let nyVilkaarTypeModalInstance = null;
+        let retningslinjeModalInstance = null;
         let activeTooltips = [];
 
         function escapeHtmlMinimal(unsafe) {
             if (typeof unsafe !== 'string') return unsafe;
-            return unsafe
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
+            return unsafe.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
-
         function unescapeHtmlEntities(escapedHtml) {
             if (typeof escapedHtml !== 'string') return escapedHtml;
             try {
                 const doc = new DOMParser().parseFromString(escapedHtml, 'text/html');
                 return doc.documentElement.textContent;
             } catch (e) {
-                console.warn("DOMParser unescaping failed, using textarea fallback for:", escapedHtml, e);
                 const textarea = document.createElement('textarea');
                 textarea.innerHTML = escapedHtml;
                 return textarea.value;
             }
         }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
         
         function formatCurrency(number, currencySymbol) {
             if (number === null || number === undefined || String(number).trim() === '') return '';
             const num = parseFloat(String(number).replace(/\s/g, '')); 
-            
-            if (isNaN(num)) {
-                return String(number); 
-            }
-            
+            if (isNaN(num)) return String(number); 
             let numStr = String(num.toFixed(0));
-            
             let formattedNum = "";
             let counter = 0;
             for (let i = numStr.length - 1; i >= 0; i--) {
-                if (counter > 0 && counter % 3 === 0) {
-                    formattedNum = " " + formattedNum;
-                }
+                if (counter > 0 && counter % 3 === 0) formattedNum = " " + formattedNum;
                 formattedNum = numStr[i] + formattedNum;
                 counter++;
             }
-
             return `${currencySymbol} ${formattedNum},-`;
         }
 
-
-        function parsePlaceholders(template) {
+        function parseRawPlaceholders(template) {
             const placeholders = [];
             const placeholderRegex = /<([^>\s]+)\s*([^>]*)>/g; 
             const attributeRegex = /([a-zA-Z0-9_æøåÆØÅ]+)\s*=\s*(?:'([^']*)'|"([^"]*)"|([^>\s]+))/g;
@@ -323,21 +296,22 @@
                 const attributes = {};
                 let attrMatch;
                 while((attrMatch = attributeRegex.exec(attributesString)) !== null) {
-                    attributes[attrMatch[1]] = attrMatch[2] || attrMatch[3] || attrMatch[4] || '';
+                    attributes[attrMatch[1]] = unescapeHtmlEntities(attrMatch[2] || attrMatch[3] || attrMatch[4] || '');
                 }
                 
-                if (tagName === 'anlegg' || tagName === 'aktør') {
-                    if (!attributes.hasOwnProperty('id')) {
-                        attributes.id = ''; 
-                    }
-                    if (!attributes.hasOwnProperty('navn')) {
-                        attributes.navn = ''; 
-                    }
-                } else if (tagName === 'elv' || tagName === 'innsjø' || tagName === 'dam') {
+                const kjentTypeInfo = kjenteTagTyper[tagName];
+                // For entiteter, hvis id/navn ikke er spesifisert, legg til tomme strenger for å trigge UI
+                if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
                     if (!attributes.hasOwnProperty('navn')) attributes.navn = ''; 
+                    if (kjentTypeInfo.idAttr && !attributes.hasOwnProperty(kjentTypeInfo.idAttr)) {
+                         attributes[kjentTypeInfo.idAttr] = '';
+                    }
+                } 
+                // For parametere, hvis 'verdi' ikke er spesifisert, legg til tom streng for å trigge UI
+                else if (!attributes.hasOwnProperty('verdi') && 
+                         ((kjentTypeInfo && kjentTypeInfo.kategori === 'parameter') || !kjentTypeInfo)) {
+                     attributes.verdi = ''; 
                 }
-
-
                 placeholders.push({ raw, tagName, attributes, originalIndex: placeholderIndex++ });
             }
             return placeholders;
@@ -349,9 +323,7 @@
             const previewDiv = document.getElementById('rawTemplatePreviewSelect');
             if (selectedType) {
                 previewDiv.innerHTML = selectedType.template.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
-            } else {
-                previewDiv.innerHTML = '';
-            }
+            } else { previewDiv.innerHTML = ''; }
         }
 
         function populateVilkaarTypeSelect(selectLast = false) {
@@ -360,168 +332,163 @@
             selectElement.innerHTML = ''; 
             vilkaarstyper.forEach(type => {
                 const option = document.createElement('option');
-                option.value = type.id;
-                option.textContent = type.label;
+                option.value = type.id; option.textContent = type.label;
                 selectElement.appendChild(option);
             });
-            
             selectElement.removeEventListener('change', displayRawTemplatePreview); 
             selectElement.addEventListener('change', displayRawTemplatePreview);
-
-            if (selectLast && vilkaarstyper.length > 0) {
-                selectElement.value = vilkaarstyper[vilkaarstyper.length - 1].id;
-            } else if (vilkaarstyper.find(vt => vt.id === currentValue)) {
-                 selectElement.value = currentValue;
-            } else if (vilkaarstyper.length > 0) {
-                selectElement.value = vilkaarstyper[0].id; 
-            }
+            if (selectLast && vilkaarstyper.length > 0) selectElement.value = vilkaarstyper[vilkaarstyper.length - 1].id;
+            else if (vilkaarstyper.find(vt => vt.id === currentValue)) selectElement.value = currentValue;
+            else if (vilkaarstyper.length > 0) selectElement.value = vilkaarstyper[0].id; 
             displayRawTemplatePreview(); 
         }
 
-        function createFormFieldForAttribute(placeholder, attributeName, placeholderOriginalIndex) {
+        function createFormFieldUI(placeholderData, placeholderOriginalIndex) {
+            const { tagName, attributes } = placeholderData;
+            let kjentTypeInfo = kjenteTagTyper[tagName] || { kategori: "parameter", uiType: "textInput" }; 
+            
+            if (attributes.hasOwnProperty('valg') && kjentTypeInfo.kategori === 'parameter') {
+                kjentTypeInfo = { ...kjentTypeInfo, uiType: 'customDropdown' }; 
+            }
+
             const formGroup = document.createElement('div');
             formGroup.className = 'mb-3';
-            const label = document.createElement('label');
-            label.className = 'form-label';
-            let labelText = `${placeholder.tagName}`; 
-            if (attributeName !== 'verdi' || Object.keys(placeholder.attributes).filter(k => k !== 'verdi' && k !== 'type').length > 0) { // Ikke vis (verdi) hvis type også er der
-                labelText += ` (${placeholder.attributes.type ? placeholder.attributes.type + (attributeName === 'verdi' ? '' : ', ' + attributeName) : attributeName})`;
-            }
-
-            if (placeholder.attributes.valuta && attributeName === 'verdi') labelText += ` (${placeholder.attributes.valuta})`;
-            else if (placeholder.attributes.metrikk && attributeName === 'verdi') labelText += ` [${placeholder.attributes.metrikk}]`; // Kun vis metrikk for verdi-feltet
+            const labelEl = document.createElement('label');
+            labelEl.className = 'form-label';
+            let labelText = tagName.charAt(0).toUpperCase() + tagName.slice(1);
+            const fieldBaseId = `ph-${placeholderOriginalIndex}`; 
             
-            if (placeholder.attributes.format && attributeName !== 'format') labelText += ` (${placeholder.attributes.format})`;
-            label.htmlFor = `ph-${placeholderOriginalIndex}-${attributeName}`;
-            label.textContent = labelText + ':';
-            formGroup.appendChild(label);
+            labelEl.htmlFor = `${fieldBaseId}-${kjentTypeInfo.kategori === 'entitet' || kjentTypeInfo.uiType === 'customDropdown' ? 'dropdown' : 'verdi'}`;
 
-            let input;
-            const currentValue = placeholder.attributes[attributeName];
-            if (placeholder.tagName === 'dato' && placeholder.attributes.format === 'dd.mm.åååå') {
-                input = document.createElement('input'); input.type = 'text'; input.placeholder = 'dd.mm.åååå';
-            } else if (placeholder.attributes.min || placeholder.attributes.max || (attributeName === 'verdi' && !isNaN(parseFloat(currentValue)))) {
-                input = document.createElement('input'); input.type = 'number';
-                if (placeholder.attributes.min) input.min = placeholder.attributes.min;
-                if (placeholder.attributes.max) input.max = placeholder.attributes.max;
-            } else {
-                input = document.createElement('input'); input.type = 'text';
+            if (kjentTypeInfo.kategori === 'entitet') {
+                const typeAttr = attributes.type;
+                labelText += typeAttr && tagName === 'anlegg' ? ` (Type: ${typeAttr})` : '';
+            } else { 
+                const typeAttr = attributes.type; 
+                if(typeAttr) labelText += ` (Type: ${typeAttr})`;
+                const metrikk = attributes.metrikk || attributes.valuta;
+                if (metrikk) labelText += ` [${metrikk}]`;
+                if (attributes.format) labelText += ` (${attributes.format})`;
             }
-            input.className = 'form-control';
-            input.id = `ph-${placeholderOriginalIndex}-${attributeName}`;
-            input.value = currentValue === '0' ? '' : unescapeHtmlEntities(currentValue);
-            input.dataset.placeholderOriginalIndex = placeholderOriginalIndex;
-            input.dataset.attributeName = attributeName;
-            input.dataset.initialAttributeValue = placeholder.attributes[attributeName];
-            input.addEventListener('input', handleFormInputChange);
-            formGroup.appendChild(input);
+            labelEl.textContent = labelText + ':';
+            formGroup.appendChild(labelEl);
+
+            let inputElement;
+            if (kjentTypeInfo.uiType === 'dropdown') {
+                inputElement = document.createElement('select');
+                inputElement.className = 'form-select';
+                inputElement.id = `${fieldBaseId}-dropdown`;
+                inputElement.dataset.tagName = tagName; 
+
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = `Velg ${tagName.toLowerCase()}...`;
+                inputElement.appendChild(defaultOption);
+
+                const dataSource = dataKilder[kjentTypeInfo.dataSourceName] || [];
+                let filteredSource = dataSource;
+                if (tagName === 'anlegg' && attributes.type) {
+                    filteredSource = dataSource.filter(item => item.type === attributes.type);
+                }
+
+                filteredSource.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = String(item[kjentTypeInfo.idAttr] || item[kjentTypeInfo.navnAttr]); 
+                    option.textContent = unescapeHtmlEntities(item.navn);
+                    // Forhåndsvelg basert på id hvis det finnes, ellers navn (for elv/innsjø)
+                    if (attributes.id && String(attributes.id) === option.value) {
+                        option.selected = true;
+                    } else if (!attributes.id && attributes.navn === item.navn && (tagName === 'elv' || tagName === 'innsjø' || tagName === 'dam' || tagName === 'aktør') ) { 
+                        option.selected = true;
+                    }
+                    inputElement.appendChild(option);
+                });
+            } else if (kjentTypeInfo.uiType === 'customDropdown') { 
+                inputElement = document.createElement('select');
+                inputElement.className = 'form-select';
+                inputElement.id = `${fieldBaseId}-dropdown`;
+                inputElement.dataset.tagName = tagName;
+                inputElement.dataset.attributeName = 'verdi';
+
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = `Velg ${attributes.label || tagName.toLowerCase()}...`; 
+                inputElement.appendChild(defaultOption);
+
+                const valgOptions = attributes.valg.split('|');
+                valgOptions.forEach(valg => {
+                    const option = document.createElement('option');
+                    const trimmedValg = valg.trim();
+                    option.value = trimmedValg;
+                    option.textContent = trimmedValg;
+                    if (attributes.verdi === trimmedValg) {
+                        option.selected = true;
+                    }
+                    inputElement.appendChild(option);
+                });
+
+            } else { 
+                inputElement = document.createElement('input');
+                inputElement.className = 'form-control';
+                inputElement.id = `${fieldBaseId}-verdi`;
+                inputElement.dataset.attributeName = 'verdi'; 
+                
+                if (kjentTypeInfo.uiType === 'numberInput' || attributes.hasOwnProperty('min') || attributes.hasOwnProperty('max')) {
+                    inputElement.type = 'number'; 
+                } else if (kjentTypeInfo.uiType === 'datePicker' || tagName === 'dato') { 
+                    inputElement.type = 'text';
+                    inputElement.placeholder = attributes.format || 'dd.mm.åååå';
+                } else {
+                    inputElement.type = 'text';
+                }
+
+                if (attributes.min !== undefined) inputElement.min = attributes.min;
+                if (attributes.max !== undefined) inputElement.max = attributes.max;
+                
+                const initialValue = attributes.verdi;
+                inputElement.value = (initialValue === '0' && inputElement.type === 'number' && !attributes.min) ? '' : unescapeHtmlEntities(initialValue || '');
+            }
+            
+            inputElement.dataset.placeholderOriginalIndex = placeholderOriginalIndex; 
+            inputElement.addEventListener('input', handleFormInputChange);
+            formGroup.appendChild(inputElement);
+
             const errorSpan = document.createElement('span');
             errorSpan.className = 'error-message';
-            errorSpan.id = `error-ph-${placeholderOriginalIndex}-${attributeName}`;
+            errorSpan.id = `error-${inputElement.id}`; 
             formGroup.appendChild(errorSpan);
+            
             return formGroup;
         }
 
-        function createGenericDropdownField(placeholder, placeholderOriginalIndex) {
-            const formGroup = document.createElement('div');
-            formGroup.className = 'mb-3';
-            const label = document.createElement('label');
-            label.className = 'form-label';
-            const tagNameCapitalized = placeholder.tagName.charAt(0).toUpperCase() + placeholder.tagName.slice(1);
-            label.htmlFor = `ph-${placeholderOriginalIndex}-dropdown`; 
-            label.textContent = `${tagNameCapitalized}${placeholder.attributes.type && placeholder.tagName === 'anlegg' ? ' (filter: ' + placeholder.attributes.type + ')' : ''}:`;
-            formGroup.appendChild(label);
-            const select = document.createElement('select');
-            select.className = 'form-select';
-            select.id = `ph-${placeholderOriginalIndex}-dropdown`; 
-            select.dataset.placeholderOriginalIndex = placeholderOriginalIndex;
-            select.dataset.tagName = placeholder.tagName; 
-            
-            let optionsSource = [];
-            let defaultText = `Velg ${placeholder.tagName.toLowerCase()}...`;
-            let valueAttribute = 'id'; 
-
-            if (placeholder.tagName === 'anlegg') {
-                optionsSource = fiktiveAnlegg;
-                const anleggTypeFilter = placeholder.attributes.type;
-                if (anleggTypeFilter) {
-                    optionsSource = optionsSource.filter(a => a.type === anleggTypeFilter);
-                }
-            } else if (placeholder.tagName === 'aktør') { 
-                 optionsSource = [{id: 'Konsesjonær', navn: 'Konsesjonær'}, {id: 'Tiltakshaver', navn: 'Tiltakshaver'}];
-            } else if (placeholder.tagName === 'elv') {
-                optionsSource = fiktiveElver;
-                valueAttribute = 'navn'; 
-            } else if (placeholder.tagName === 'innsjø' || placeholder.tagName === 'dam') {
-                optionsSource = fiktiveInnsjoer;
-                valueAttribute = 'navn';
-            }
-
-            const defaultOption = document.createElement('option');
-            defaultOption.value = ''; defaultOption.textContent = defaultText;
-            select.appendChild(defaultOption);
-
-            optionsSource.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item[valueAttribute]; 
-                option.textContent = unescapeHtmlEntities(item.navn);
-                if ((placeholder.tagName === 'anlegg' || placeholder.tagName === 'aktør') && placeholder.attributes.id === String(item.id)) {
-                    option.selected = true;
-                } else if ((placeholder.tagName === 'elv' || placeholder.tagName === 'innsjø' || placeholder.tagName === 'dam') && placeholder.attributes.navn === item.navn) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            });
-            select.addEventListener('change', handleFormInputChange);
-            formGroup.appendChild(select);
-            const errorSpan = document.createElement('span');
-            errorSpan.className = 'error-message';
-            errorSpan.id = `error-ph-${placeholderOriginalIndex}-dropdown`; 
-            formGroup.appendChild(errorSpan);
-            return formGroup;
-        }
-        
         function renderModalForm() {
-             const form = document.getElementById('vilkaarSkjema');
+            const form = document.getElementById('vilkaarSkjema');
             form.innerHTML = '';
             currentPlaceholdersData.forEach((phData) => {
-                const placeholderOriginalIndex = phData.originalIndex;
-                const tagName = phData.tagName;
+                const kjentTypeInfo = kjenteTagTyper[phData.tagName];
+                let needsInput = false;
 
-                if (tagName === 'anlegg' || tagName === 'aktør' || tagName === 'elv' || tagName === 'innsjø' || tagName === 'dam') { 
-                    const needsDropdown = 
-                        (tagName === 'anlegg' || tagName === 'aktør') ? (phData.attributes.id === '' || phData.attributes.navn === '') :
-                        (phData.attributes.navn === ''); // For elv/innsjø/dam, sjekk bare navn
-
-                    if (needsDropdown) {
-                        if (!form.querySelector(`select[data-placeholder-original-index="${placeholderOriginalIndex}"]`)) { 
-                            form.appendChild(createGenericDropdownField(phData, placeholderOriginalIndex));
-                        }
+                if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
+                    // Input trengs hvis 'navn' er tomt (eller 'id' for anlegg/aktør hvis de er definert som tomme)
+                    if (phData.attributes.navn === '' || (kjentTypeInfo.idAttr && phData.attributes.hasOwnProperty(kjentTypeInfo.idAttr) && phData.attributes[kjentTypeInfo.idAttr] === '')) {
+                        needsInput = true;
                     }
-                } else {
-                    let fieldCreatedForThisPlaceholder = false;
-                    for (const attrName in phData.attributes) {
-                        if ((phData.attributes[attrName] === '0' || phData.attributes[attrName] === '') &&
-                            !((tagName === 'anlegg' || tagName === 'aktør') && (attrName === 'id' || attrName === 'navn'))) {
-                            form.appendChild(createFormFieldForAttribute(phData, attrName, placeholderOriginalIndex));
-                            fieldCreatedForThisPlaceholder = true;
-                        }
-                    }
-                    if (!fieldCreatedForThisPlaceholder && 
-                        !phData.attributes.hasOwnProperty('verdi') && 
-                        !['anlegg', 'aktør', 'elv', 'innsjø', 'dam'].includes(tagName) &&
-                        Object.keys(phData.attributes).some(attr => ['format', 'min', 'max', 'metrikk', 'valuta'].includes(attr)) 
-                        ) {
-                        phData.attributes.verdi = ''; 
-                        form.appendChild(createFormFieldForAttribute(phData, 'verdi', placeholderOriginalIndex));
+                } else { // Parameter eller ukjent tag
+                    // Input trengs hvis 'verdi' mangler eller er tomt, ELLER hvis 'valg' attributt finnes (alltid dropdown)
+                    if (phData.attributes.valg || !phData.attributes.hasOwnProperty('verdi') || phData.attributes.verdi === '') {
+                        needsInput = true;
                     }
                 }
+                
+                if(needsInput){
+                    form.appendChild(createFormFieldUI(phData, phData.originalIndex));
+                }
             });
-            updateLivePreview();
-            validateModalForm();
+            updateLivePreview(); 
+            validateModalForm(); 
         }
-
-        function handleFormInputChange(event) {
+        
+        function handleFormInputChange(event) { /* ... (Som før, men test grundig med nye ID-er for elv/innsjø) ... */
             const inputElement = event.target;
             const placeholderOriginalIndex = parseInt(inputElement.dataset.placeholderOriginalIndex);
             const placeholderToUpdate = currentPlaceholdersData.find(p => p.originalIndex === placeholderOriginalIndex);
@@ -530,82 +497,63 @@
             if (inputElement.tagName === 'SELECT') { 
                 const selectedValue = inputElement.value;
                 const tagNameFromDataset = inputElement.dataset.tagName; 
-
-                if (selectedValue) {
-                    let selectedItemName = selectedValue; 
-                    let selectedItemId = selectedValue;   
-
-                    if (tagNameFromDataset === 'anlegg') {
-                        const anlegg = fiktiveAnlegg.find(a => String(a.id) === selectedValue);
-                        if(anlegg) selectedItemName = anlegg.navn;
-                    } else if (tagNameFromDataset === 'aktør') {
-                        const aktoer = [{id: 'Konsesjonær', navn: 'Konsesjonær'}, {id: 'Tiltakshaver', navn: 'Tiltakshaver'}].find(a => a.id === selectedValue);
-                         if(aktoer) selectedItemName = aktoer.navn;
-                    } else if (tagNameFromDataset === 'elv') {
-                        const elv = fiktiveElver.find(e => e.navn === selectedValue);
-                        if(elv) selectedItemId = elv.id; 
-                    } else if (tagNameFromDataset === 'innsjø' || tagNameFromDataset === 'dam') {
-                        const innsjo = fiktiveInnsjoer.find(i => i.navn === selectedValue);
-                        if(innsjo) selectedItemId = innsjo.id;
+                const kjentTypeInfo = kjenteTagTyper[tagNameFromDataset];
+                
+                if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
+                    const dataSource = dataKilder[kjentTypeInfo.dataSourceName] || [];
+                    if (selectedValue) {
+                        const selectedItem = dataSource.find(item => String(item[kjentTypeInfo.idAttr]) === selectedValue);
+                        if (selectedItem) {
+                            placeholderToUpdate.attributes.navn = selectedItem.navn;
+                            if (kjentTypeInfo.idAttr) placeholderToUpdate.attributes.id = selectedItem.id;
+                        }
+                    } else { 
+                        placeholderToUpdate.attributes.navn = '';
+                        if (kjentTypeInfo.idAttr) placeholderToUpdate.attributes.id = '';
                     }
-                    
-                    placeholderToUpdate.attributes.navn = selectedItemName;
-                    if (tagNameFromDataset === 'anlegg' || tagNameFromDataset === 'aktør') {
-                        placeholderToUpdate.attributes.id = selectedItemId;
-                    }
-
                 } else { 
-                    placeholderToUpdate.attributes.navn = '';
-                    if (tagNameFromDataset === 'anlegg' || tagNameFromDataset === 'aktør') {
-                         placeholderToUpdate.attributes.id = '';
-                    }
+                     placeholderToUpdate.attributes.verdi = selectedValue;
                 }
             } else { 
-                const attributeName = inputElement.dataset.attributeName;
+                const attributeName = inputElement.dataset.attributeName || 'verdi'; 
                 placeholderToUpdate.attributes[attributeName] = inputElement.value; 
             }
             updateLivePreview();
             validateModalForm();
-         }
-
-        function updateLivePreview() {
-            const livePreviewDiv = document.getElementById('livePreview');
-            if (livePreviewDiv) {
-                livePreviewDiv.innerHTML = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true);
-            }
-            const rawPreviewDiv = document.getElementById('rawPreview');
-            if (rawPreviewDiv) {
-                let logicalRawString = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
-                rawPreviewDiv.innerHTML = logicalRawString.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
-            }
         }
 
-        function validateModalForm() {
+        function validateModalForm() { /* ... (Som før, men test grundig med nye ID-er for elv/innsjø) ... */
             let allValid = true;
             const lagreKnapp = document.getElementById('lagreVilkårKnapp');
             document.querySelectorAll('#vilkaarSkjema .error-message').forEach(span => span.textContent = '');
             const formElements = document.querySelectorAll('#vilkaarSkjema .form-control, #vilkaarSkjema .form-select');
-            if (formElements.length === 0 && (!currentPlaceholdersData || currentPlaceholdersData.length === 0)) {
-                lagreKnapp.disabled = false; return true;
+            
+            if (formElements.length === 0) { 
+                lagreKnapp.disabled = false;
+                return true;
             }
+
             formElements.forEach(inputElement => {
                 const placeholderOriginalIndex = parseInt(inputElement.dataset.placeholderOriginalIndex);
                 const placeholderData = currentPlaceholdersData.find(p => p.originalIndex === placeholderOriginalIndex);
                 if (!placeholderData) return;
-                let isValidField = true; let errorMessage = '';
+
+                let isValidField = true; 
+                let errorMessage = '';
+
                 if (inputElement.tagName === 'SELECT') { 
                     if (!inputElement.value) { 
                         isValidField = false; 
-                        errorMessage = `${placeholderData.tagName.charAt(0).toUpperCase() + placeholderData.tagName.slice(1)} må velges.`; 
+                        errorMessage = `Vennligst gjør et valg for '${placeholderData.tagName}'.`; 
                     }
-                } else {
-                    const attributeName = inputElement.dataset.attributeName;
+                } else { 
                     const currentValue = inputElement.value;
-                    const origPhForValidation = parsePlaceholders(placeholderData.raw)[0]; 
-                    const initialValueInTemplate = origPhForValidation.attributes[attributeName];
+                    const origPhForValidation = parseRawPlaceholders(placeholderData.raw)[0]; 
+                    const initialValueInTemplate = origPhForValidation.attributes[inputElement.dataset.attributeName || 'verdi'];
 
-                    const isRequired = (initialValueInTemplate === '0' || initialValueInTemplate === '') || 
-                                       (attributeName === 'verdi' && !placeholderData.raw.includes(`${attributeName}=`)); 
+                    const isRequired = !placeholderData.attributes.hasOwnProperty('verdi') || // Hvis verdi ikke var i malen
+                                       initialValueInTemplate === '' ||                  // Eller hvis den var tom
+                                       initialValueInTemplate === '0';                     // Eller hvis den var '0' (for tall)
                     
                     if (isRequired && currentValue.trim() === '') { isValidField = false; errorMessage = 'Feltet er påkrevd.'; }
                     else if (inputElement.type === 'number' && currentValue.trim() !== '') {
@@ -624,48 +572,53 @@
                             const maxAttr = inputElement.max;
                             if (maxAttr !== "" && maxAttr !== null && numVal > parseFloat(maxAttr)) { isValidField = false; errorMessage = `Verdien må være maks ${maxAttr}.`; }
                         }
-                    } else if (placeholderData.tagName === 'dato' && attributeName === 'verdi' && currentValue.trim() !== '') {
-                         if (placeholderData.attributes.format === 'dd.mm.åååå' && !/^\d{2}\.\d{2}\.\d{4}$/.test(currentValue)) {
+                    } else if ((placeholderData.tagName === 'dato' || (placeholderData.attributes && placeholderData.attributes.format === 'dd.mm.åååå')) && inputElement.type === 'text') {
+                         if (currentValue.trim() !== '' && !/^\d{2}\.\d{2}\.\d{4}$/.test(currentValue)) {
                             isValidField = false; errorMessage = 'Ugyldig datoformat (bruk dd.mm.åååå).';
                         }
                     }
                 }
                 if (!isValidField) {
-                    const errorDestId = inputElement.tagName === 'SELECT' ? `error-${inputElement.id}` : `error-ph-${placeholderOriginalIndex}-${inputElement.dataset.attributeName}`;
-                    const errorElement = document.getElementById(errorDestId);
-                    if (errorElement) errorElement.textContent = errorMessage;
+                    document.getElementById(`error-${inputElement.id}`).textContent = errorMessage;
                     allValid = false;
                 }
             });
             lagreKnapp.disabled = !allValid;
             return allValid;
         }
+        
+        function generateTextFromTemplate(templateString, filledPlaceholders, readable, withColor = false) { /* ... (som i forrige svar, med segmentbasert bygging) ... */
+            let segments = []; 
+            let lastIndex = 0;
+            const sortedPlaceholders = [...filledPlaceholders].sort((a, b) => a.originalIndex - b.originalIndex);
 
-        function generateTextFromTemplate(templateInput, livePlaceholdersDataList, readable, withColor = false) {
-            let segments = []; let lastIndex = 0;
-            const originalPlaceholdersStructure = parsePlaceholders(templateInput);
-            originalPlaceholdersStructure.forEach(origPhStruct => {
-                const livePhData = livePlaceholdersDataList.find(p => p.originalIndex === origPhStruct.originalIndex);
-                if (!livePhData) { segments.push(origPhStruct.raw); return; }
-                const searchArea = templateInput.substring(lastIndex);
+            sortedPlaceholders.forEach(livePhData => {
+                const origPhStruct = livePhData; 
+                const searchArea = templateString.substring(lastIndex);
                 const match = searchArea.match(new RegExp(escapeRegExp(origPhStruct.raw)));
-                if (!match) { return; }
-                const phActualStartIndex = lastIndex + match.index;
 
-                segments.push(readable ? escapeHtmlMinimal(templateInput.substring(lastIndex, phActualStartIndex)) : templateInput.substring(lastIndex, phActualStartIndex));
+                if (!match) { return;  }
                 
+                const phStartIndexInSegment = match.index;
+                const phActualStartIndex = lastIndex + phStartIndexInSegment;
+                
+                segments.push(readable ? escapeHtmlMinimal(templateString.substring(lastIndex, phActualStartIndex)) : templateString.substring(lastIndex, phActualStartIndex));
+                
+                let replacementContent = '';
+                const kjentTypeInfo = kjenteTagTyper[livePhData.tagName];
+
                 if (readable) {
-                    let displayValue = '';
-                    let isPlaceholderValue = false; 
+                    let displayValue = `[${livePhData.tagName} mangler data]`;
+                    let isFilledValue = false;
                     const phValue = livePhData.attributes.verdi;
                     const phNavn = livePhData.attributes.navn;
-                    const phMetrikk = origPhStruct.attributes.metrikk || livePhData.attributes.metrikk;
-                    const phValuta = origPhStruct.attributes.valuta || livePhData.attributes.valuta;
+                    const phMetrikk = livePhData.attributes.metrikk || (origPhStruct.attributes && origPhStruct.attributes.metrikk);
+                    const phValuta = livePhData.attributes.valuta || (origPhStruct.attributes && origPhStruct.attributes.valuta);
 
-                    if (['anlegg', 'aktør', 'elv', 'innsjø', 'dam'].includes(livePhData.tagName)) {
+                    if (kjentTypeInfo && kjentTypeInfo.kategori === 'entitet') {
                         displayValue = phNavn || `[${livePhData.tagName} ikke valgt]`;
-                        if (phNavn && phNavn.trim() !== '') isPlaceholderValue = true;
-                    } else { // Andre tags
+                        if (phNavn && phNavn.trim() !== '') isFilledValue = true;
+                    } else {
                         if (phValue !== undefined) {
                             if (phValuta && String(phValue).trim() !== '') {
                                 displayValue = formatCurrency(phValue, phValuta);
@@ -675,14 +628,15 @@
                                     displayValue += ` ${phMetrikk}`;
                                 }
                             }
-                            if (String(phValue).trim() !== '' || (origPhStruct.attributes.verdi === '0' || origPhStruct.attributes.verdi === '')) {
-                                isPlaceholderValue = true;
+                            if (String(phValue).trim() !== '' || 
+                                (origPhStruct.attributes && (origPhStruct.attributes.verdi === '0' || origPhStruct.attributes.verdi === '' || !origPhStruct.attributes.hasOwnProperty('verdi') ))
+                               ) {
+                                isFilledValue = true;
                             }
                         } 
-                        // Fallback for generiske tags som KUN har navn (ikke verdi, anlegg, aktør etc.)
                         else if (phNavn !== undefined) { 
                             displayValue = phNavn;
-                            if (String(phNavn).trim() !== '') isPlaceholderValue = true;
+                            if (String(phNavn).trim() !== '') isFilledValue = true;
                         } 
                         else {
                             displayValue = `[${livePhData.tagName}]`;
@@ -690,72 +644,84 @@
                     }
                     
                     let unescapedDisplayValue = unescapeHtmlEntities(displayValue);
-                    let finalDisplayValue = escapeHtmlMinimal(unescapedDisplayValue);
+                    replacementContent = escapeHtmlMinimal(unescapedDisplayValue);
 
-                    if (withColor && isPlaceholderValue && String(finalDisplayValue).trim() !== '' && !finalDisplayValue.startsWith('[')) {
-                        segments.push(`<span class="user-value">${finalDisplayValue}</span>`);
-                    } else {
-                        segments.push(finalDisplayValue);
+                    if (withColor && isFilledValue && String(replacementContent).trim() !== '' && !replacementContent.startsWith('[')) {
+                        replacementContent = `<span class="user-value">${replacementContent}</span>`;
                     }
-
                 } else { 
-                    let newTagString = `<${livePhData.tagName}`;
+                    let newTag = `<${livePhData.tagName}`;
                     for (const attrKey in livePhData.attributes) {
-                        if (livePhData.attributes.hasOwnProperty(attrKey)) {
+                        if (livePhData.attributes.hasOwnProperty(attrKey) && livePhData.attributes[attrKey] !== undefined) {
                             const attrValue = livePhData.attributes[attrKey];
-                            const escapedForAttr = String(attrValue)
-                                                    .replace(/&/g, '&amp;') 
-                                                    .replace(/'/g, '&#039;'); 
-                            newTagString += ` ${attrKey}='${escapedForAttr}'`;
+                            const escapedForAttr = String(attrValue).replace(/&/g, '&amp;').replace(/'/g, '&#039;'); 
+                            newTag += ` ${attrKey}='${escapedForAttr}'`;
                         }
                     }
-                    newTagString += '>';
-                    segments.push(newTagString);
+                    newTag += '>';
+                    replacementContent = escapeHtmlMinimal(newTag);
                 }
+                segments.push(replacementContent);
                 lastIndex = phActualStartIndex + origPhStruct.raw.length;
             });
-            segments.push(readable ? escapeHtmlMinimal(templateInput.substring(lastIndex)) : templateInput.substring(lastIndex));
+            segments.push(readable ? escapeHtmlMinimal(templateString.substring(lastIndex)) : templateString.substring(lastIndex));
             return segments.join('');
         }
         
-        function initTooltips() {
-            activeTooltips.forEach(tooltip => tooltip.dispose());
-            activeTooltips = [];
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-                const tooltip = new bootstrap.Tooltip(tooltipTriggerEl, {
-                    html: true, 
-                    sanitize: false 
-                });
-                activeTooltips.push(tooltip);
-            });
+        function updateLivePreview() { /* ... (som før) ... */
+             const livePreviewDiv = document.getElementById('livePreview');
+            if (livePreviewDiv) {
+                livePreviewDiv.innerHTML = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true);
+            }
+            const rawPreviewDiv = document.getElementById('rawPreview');
+            if (rawPreviewDiv) {
+                let rawHtml = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
+                rawPreviewDiv.innerHTML = rawHtml.replace(/&#039;/g, "'").replace(/&apos;/g, "'"); 
+            }
         }
         
-        document.getElementById('leggTilVilkårKnapp').addEventListener('click', () => {
+        document.getElementById('leggTilVilkårKnapp').addEventListener('click', () => { /* ... (som før, med justert requiresModal) ... */
             const selectedTypeId = document.getElementById('vilkaarTypeSelect').value;
             const selectedType = vilkaarstyper.find(type => type.id === selectedTypeId);
-            if (!selectedType) {
-                alert("Vennligst velg en vilkårstype eller legg til en ny.");
-                return;
-            }
+            if (!selectedType) { alert("Vennligst velg en vilkårstype."); return; }
 
             currentTemplateString = selectedType.template;
-            const initialPlaceholders = parsePlaceholders(currentTemplateString);
+            const initialPlaceholders = parseRawPlaceholders(currentTemplateString); 
+            
+            let requiresModal = initialPlaceholders.some(ph => {
+                const kjentType = kjenteTagTyper[ph.tagName];
+                if (kjentType && kjentType.kategori === 'entitet') {
+                    return !ph.attributes.navn || (kjentType.idAttr && !ph.attributes.id);
+                }
+                // For parameter, krever modal hvis 'verdi' ikke er forhåndsutfylt, ELLER hvis 'valg' er spesifisert
+                return ph.attributes.valg || !ph.attributes.hasOwnProperty('verdi') || ph.attributes.verdi === '';
+            });
 
-            if (initialPlaceholders.length === 0) { 
+            if (initialPlaceholders.length === 0) requiresModal = false;
+
+
+            if (!requiresModal) { 
                 const listItemId = `vilkaar-item-${nextVilkårInstanceId++}`;
                 const listItem = document.createElement('div');
                 listItem.className = 'list-group-item mb-3 p-3 shadow-sm';
                 listItem.id = listItemId;
-                const textContent = escapeHtmlMinimal(currentTemplateString);
+                const readableHtml = generateTextFromTemplate(currentTemplateString, initialPlaceholders, true, true);
 
                 listItem.innerHTML = `
                     <div class="vilkaar-item-header">
                         <h5 class="mb-1">${escapeHtmlMinimal(selectedType.label)}</h5>
                         <button type="button" class="btn-close delete-vilkaar-btn" aria-label="Slett"></button>
                     </div>
-                    <div class="readable-template-display">${textContent}</div> 
+                    <div class="readable-template-display"></div> 
                 `;
+                listItem.querySelector('.readable-template-display').innerHTML = readableHtml;
+
+                const rawTextForTooltip = generateTextFromTemplate(currentTemplateString, initialPlaceholders, false)
+                                            .replace(/&lt;/g, '<').replace(/>/g, '>').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
+                listItem.dataset.bsToggle = "tooltip";
+                listItem.dataset.bsPlacement = "left";
+                listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${escapeHtmlMinimal(rawTextForTooltip)}</div>`;
+
                 listItem.querySelector('.delete-vilkaar-btn').addEventListener('click', () => {
                     const tooltipInstance = bootstrap.Tooltip.getInstance(listItem); 
                     if (tooltipInstance) tooltipInstance.dispose();
@@ -763,23 +729,19 @@
                     activeTooltips = activeTooltips.filter(t => t._element !== listItem);
                 });
                 document.getElementById('vilkaarListe').appendChild(listItem);
+                if(initialPlaceholders.length > 0 && initialPlaceholders.some(ph => Object.keys(ph.attributes).length > 0)) initTooltips();
             } else { 
-                currentPlaceholdersData = JSON.parse(JSON.stringify(initialPlaceholders));
+                currentPlaceholdersData = JSON.parse(JSON.stringify(initialPlaceholders)); 
                 currentSelectedVilkårType = selectedType;
                 document.getElementById('vilkaarModalLabel').textContent = `Fyll ut: ${selectedType.label}`;
                 renderModalForm();
-                if (!vilkaarModalInstance) {
-                    vilkaarModalInstance = new bootstrap.Modal(document.getElementById('vilkaarModal'));
-                }
+                if (!vilkaarModalInstance) vilkaarModalInstance = new bootstrap.Modal(document.getElementById('vilkaarModal'));
                 vilkaarModalInstance.show();
             }
         });
 
-        document.getElementById('lagreVilkårKnapp').addEventListener('click', () => {
-             if (!validateModalForm() || !currentSelectedVilkårType) {
-                return;
-            }
-
+        document.getElementById('lagreVilkårKnapp').addEventListener('click', () => { /* ... (som før, med .hide() på slutten) ... */
+             if (!validateModalForm() || !currentSelectedVilkårType) return;
             const listItemId = `vilkaar-item-${nextVilkårInstanceId++}`;
             const listItem = document.createElement('div');
             listItem.className = 'list-group-item mb-3 p-3 shadow-sm';
@@ -787,7 +749,7 @@
 
             const readableHtmlForDisplay = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true);
             const logicalRawString = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
-            const rawTextForTooltip = logicalRawString.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
+            const rawTextForTooltip = logicalRawString.replace(/&lt;/g, '<').replace(/>/g, '>').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
 
             listItem.innerHTML = `
                 <div class="vilkaar-item-header">
@@ -800,7 +762,7 @@
 
             listItem.dataset.bsToggle = "tooltip";
             listItem.dataset.bsPlacement = "left";
-            listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${rawTextForTooltip}</div>`;
+            listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${escapeHtmlMinimal(rawTextForTooltip)}</div>`;
 
             listItem.querySelector('.delete-vilkaar-btn').addEventListener('click', () => {
                 const tooltipInstance = bootstrap.Tooltip.getInstance(listItem);
@@ -808,18 +770,17 @@
                 listItem.remove();
                 activeTooltips = activeTooltips.filter(t => t._element !== listItem);
             });
-
             document.getElementById('vilkaarListe').appendChild(listItem);
             initTooltips(); 
-
-            currentSelectedVilkårType = null;
-            vilkaarModalInstance.hide();
+            
+            currentSelectedVilkårType = null; 
+            vilkaarModalInstance.hide(); // Sørg for at denne kalles
         });
         
-        document.getElementById('vilkaarModal').addEventListener('hidden.bs.modal', function () {
-            if (currentSelectedVilkårType) {
-                currentTemplateString = '';
-                currentPlaceholdersData = [];
+        document.getElementById('vilkaarModal').addEventListener('hidden.bs.modal', function () { /* ... (som før) ... */
+            if (currentSelectedVilkårType) { 
+                currentTemplateString = ''; 
+                currentPlaceholdersData = []; 
                 currentSelectedVilkårType = null;
                 document.getElementById('vilkaarSkjema').innerHTML = '';
                 document.getElementById('livePreview').innerHTML = ''; 
@@ -827,69 +788,106 @@
             }
         });
 
+        // --- Ny Vilkårstype Modal & Retningslinje Modal ---
         const nyVilkaarNavnInput = document.getElementById('nyVilkaarNavn');
         const nyVilkaarTemplateInput = document.getElementById('nyVilkaarTemplate');
         const nyVilkaarNavnError = document.getElementById('nyVilkaarNavnError');
         const nyVilkaarTemplateError = document.getElementById('nyVilkaarTemplateError');
         const lagreNyVilkaarTypeKnapp = document.getElementById('lagreNyVilkaarTypeKnapp');
+        const defaultNyVilkaarTemplate = "Eksempel vilkår: <anlegg type='vannkraft'> er kun tillatt å hente vann fra vassdrag <elv>.";
 
-        function validateNyVilkaarTypeForm() {
-            let isValid = true;
-            nyVilkaarNavnError.textContent = '';
-            nyVilkaarTemplateError.textContent = '';
+        function setRetningslinjeInnhold() {
+            const innhold = `
+                <h4>Guide for å Lage Nye Vilkårstyper (Vilkårsgenerator Gen II - Forenklet)</h4>
+                <p>Denne guiden hjelper deg å definere nye vilkårstyper ved å skrive en mal-tekst med spesielle placeholders (tagger). Systemet vil tolke disse taggene for å lage et brukervennlig skjema for utfylling.</p>
+                <h5>1. Grunnleggende Struktur</h5>
+                <p>En mal består av tekst blandet med placeholders: <code>&lt;tagnavn attributt='verdi'&gt;</code>.</p>
+                <p>Eksempel: <code>Det skal betales &lt;beløp valuta='kr'&gt; til staten.</code></p>
+                <h5>2. Hovedkategorier av Tagger</h5>
+                <ul>
+                    <li><strong>Entitets-Tags:</strong> For "ting" (<code>anlegg</code>, <code>aktør</code>, <code>elv</code>, <code>innsjø</code>, <code>dam</code>). Gir vanligvis en dropdown.</li>
+                    <li><strong>Parameter-Tags:</strong> Alle andre tagger (<code>beløp</code>, <code>dato</code>, <code>frist</code>, egne). Gir vanligvis et input-felt.</li>
+                </ul>
+                <h5>3. Entitets-Tags</h5>
+                <p>Systemet lager en dropdown hvis <code>navn</code> (og <code>id</code> for <code>anlegg</code>/<code>aktør</code>) mangler i malen. For å låse verdien, spesifiser <code>navn</code> (og evt. <code>id</code>).</p>
+                <table class="table table-sm">
+                    <thead><tr><th>Tag</th><th>For Brukervalg</th><th>For Fastsatt Verdi</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>anlegg</code></td><td><code>&lt;anlegg type='vannkraft'&gt;</code></td><td><code>&lt;anlegg navn='Navn' id='123' type='vannkraft'&gt;</code></td></tr>
+                        <tr><td><code>aktør</code></td><td><code>&lt;aktør&gt;</code></td><td><code>&lt;aktør navn='Konsesjonær A'&gt;</code></td></tr>
+                        <tr><td><code>elv</code></td><td><code>&lt;elv&gt;</code></td><td><code>&lt;elv navn='Glomma'&gt;</code></td></tr>
+                        <tr><td><code>innsjø</code></td><td><code>&lt;innsjø&gt;</code></td><td><code>&lt;innsjø navn='Mjøsa'&gt;</code></td></tr>
+                        <tr><td><code>dam</code></td><td><code>&lt;dam&gt;</code></td><td><code>&lt;dam navn='Røssvatnet dam'&gt;</code></td></tr>
+                    </tbody>
+                </table>
+                <p>Attributtet <code>type</code> kan brukes på <code>&lt;anlegg&gt;</code> for å filtrere dropdown (f.eks. <code>type='vindkraft'</code>).</p>
 
-            if (nyVilkaarNavnInput.value.trim() === '') {
-                nyVilkaarNavnError.textContent = 'Vilkårsnavn kan ikke være tomt.';
-                isValid = false;
-            }
-            if (nyVilkaarTemplateInput.value.trim() === '') {
-                nyVilkaarTemplateError.textContent = 'Vilkårsråtekst kan ikke være tomt.';
-                isValid = false;
-            }
-            lagreNyVilkaarTypeKnapp.disabled = !isValid;
-            return isValid;
+                <h5>4. Parameter-Tags</h5>
+                <p>Systemet lager et inputfelt for <code>verdi</code> hvis det ikke er spesifisert i malen. For å låse verdien, skriv <code>verdi='dinVerdi'</code>.</p>
+                <table class="table table-sm">
+                    <thead><tr><th>Eksempel i Mal</th><th>Resultat i UI</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>&lt;beløp valuta='kr'&gt;</code></td><td>Input for beløp i kr.</td></tr>
+                        <tr><td><code>&lt;frist metrikk='år' min=1 max=5&gt;</code></td><td>Input for tall (år, 1-5).</td></tr>
+                        <tr><td><code>&lt;høyde metrikk='moh' type='laveste'&gt;</code></td><td>Input for tall (laveste høyde i moh).</td></tr>
+                        <tr><td><code>&lt;farge valg='Rød|Grønn|Blå'&gt;</code></td><td>Dropdown med valgene Rød, Grønn, Blå.</td></tr>
+                        <tr><td><code>&lt;kommentar&gt;</code></td><td>Tekstfelt.</td></tr>
+                        <tr><td><code>&lt;standard_avgift valuta='NOK' verdi='250'&gt;</code></td><td>Ingen input; verdien "NOK 250,-" vises.</td></tr>
+                    </tbody>
+                </table>
+                <p>Bruk <code>metrikk</code> (eller <code>valuta</code>), <code>format</code>, <code>min</code>, <code>max</code>, <code>valg='a|b'</code>, og <code>type</code> for å konfigurere feltet.</p>
+                <h5>5. Tips</h5>
+                <ul>
+                    <li>For entiteter som skal velges av bruker: skriv kun tag-navnet (f.eks. <code>&lt;elv&gt;</code>).</li>
+                    <li>For parametere som skal fylles ut: skriv tag-navnet med evt. metadata (f.eks. <code>&lt;beløp valuta='kr'&gt;</code>).</li>
+                    <li>For faste verdier: angi verdien i taggen (f.eks. <code>&lt;elv navn='Nidelva'&gt;</code>).</li>
+                </ul>
+            `;
+            document.getElementById('retningslinjeInnhold').innerHTML = innhold;
         }
 
+
+        function validateNyVilkaarTypeForm() { /* ... (som før) ... */
+            let i=true;nyVilkaarNavnError.textContent='';nyVilkaarTemplateError.textContent='';
+            if(nyVilkaarNavnInput.value.trim()===''){nyVilkaarNavnError.textContent='Vilkårsnavn kan ikke være tomt.';i=false;}
+            if(nyVilkaarTemplateInput.value.trim()===''){nyVilkaarTemplateError.textContent='Vilkårsråtekst kan ikke være tomt.';i=false;}
+            lagreNyVilkaarTypeKnapp.disabled=!i;return i;
+        }
         nyVilkaarNavnInput.addEventListener('input', validateNyVilkaarTypeForm);
         nyVilkaarTemplateInput.addEventListener('input', validateNyVilkaarTypeForm);
-
+        
         document.getElementById('aapneNyVilkaarTypeModalKnapp').addEventListener('click', () => {
-            if (!nyVilkaarTypeModalInstance) {
-                nyVilkaarTypeModalInstance = new bootstrap.Modal(document.getElementById('nyVilkaarTypeModal'));
-            }
+            if(!nyVilkaarTypeModalInstance)nyVilkaarTypeModalInstance=new bootstrap.Modal(document.getElementById('nyVilkaarTypeModal'));
             document.getElementById('nyVilkaarTypeSkjema').reset();
-            nyVilkaarNavnError.textContent = '';
-            nyVilkaarTemplateError.textContent = '';
-            lagreNyVilkaarTypeKnapp.disabled = true; 
-            nyVilkaarTypeModalInstance.show();
+            nyVilkaarTemplateInput.value = defaultNyVilkaarTemplate; // Pre-populer
+            nyVilkaarNavnError.textContent='';nyVilkaarTemplateError.textContent='';
+            lagreNyVilkaarTypeKnapp.disabled=true;nyVilkaarTypeModalInstance.show();
+        });
+
+        document.getElementById('aapneRetningslinjeModalKnapp').addEventListener('click', () => {
+            setRetningslinjeInnhold(); // Fyll innhold dynamisk
+            if(!retningslinjeModalInstance) retningslinjeModalInstance = new bootstrap.Modal(document.getElementById('retningslinjeModal'));
+            retningslinjeModalInstance.show();
         });
 
         lagreNyVilkaarTypeKnapp.addEventListener('click', () => {
-            if (!validateNyVilkaarTypeForm()) {
-                return;
-            }
-            const nyId = `egendefinert-${nesteEgendefinertId++}`;
-            const nyLabel = nyVilkaarNavnInput.value.trim();
-            const nyTemplate = nyVilkaarTemplateInput.value.trim();
-
-            vilkaarstyper.push({ id: nyId, label: nyLabel, template: nyTemplate });
-            populateVilkaarTypeSelect(true); 
-
-            nyVilkaarTypeModalInstance.hide();
+            if(!validateNyVilkaarTypeForm())return;
+            const n=`egendefinert-${nesteEgendefinertId++}`,t=nyVilkaarNavnInput.value.trim(),e=nyVilkaarTemplateInput.value.trim();
+            vilkaarstyper.push({id:n,label:t,template:e});populateVilkaarTypeSelect(true);nyVilkaarTypeModalInstance.hide();
         });
+        
+        function initTooltips() { /* ... (som før) ... */
+            activeTooltips.forEach(tooltip => tooltip.dispose()); activeTooltips = [];
+            const tt = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tt.forEach(e => activeTooltips.push(new bootstrap.Tooltip(e, {html:true,sanitize:false,trigger:'hover'})));
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => { 
             populateVilkaarTypeSelect();
             const lagreKnapp = document.getElementById('lagreVilkårKnapp');
             if (lagreKnapp) lagreKnapp.disabled = true; 
-            
-            document.getElementById('vilkaarSkjema').addEventListener('submit', function(event) {
-                event.preventDefault(); 
-            });
-            document.getElementById('nyVilkaarTypeSkjema').addEventListener('submit', function(event) {
-                event.preventDefault();
-            });
-
+            document.getElementById('vilkaarSkjema').addEventListener('submit', e => e.preventDefault());
+            document.getElementById('nyVilkaarTypeSkjema').addEventListener('submit', e => e.preventDefault());
             initTooltips();
         });
     </script>
