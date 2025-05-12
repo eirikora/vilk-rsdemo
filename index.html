@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vilkårsgenerator - Gen II Demo</title>
+    <title>Vilkårsgenerator - Gen II (Markdown)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding-top: 1rem; padding-bottom: 2rem; }
@@ -19,14 +19,28 @@
             margin-bottom: 0.5rem;
             word-break: break-all;
         }
+         #rawPreview { 
+             font-family: monospace;
+         }
         .readable-template-display, #livePreview {
             padding: 0.5rem;
             border: 1px solid #ced4da;
             border-radius: 0.25rem;
             background-color: #e9ecef;
-            white-space: pre-wrap;
+            white-space: normal; 
             margin-bottom: 0.5rem;
         }
+        .readable-template-display h1, #livePreview h1 { font-size: 1.5em; margin-top: 0.8em; margin-bottom: 0.4em; }
+        .readable-template-display h2, #livePreview h2 { font-size: 1.3em; margin-top: 0.7em; margin-bottom: 0.3em; }
+        .readable-template-display table, #livePreview table { width: auto; border-collapse: collapse; margin-bottom: 1em; margin-top: 0.5em; }
+        .readable-template-display th, .readable-template-display td,
+        #livePreview th, #livePreview td { border: 1px solid #ccc; padding: 0.3em 0.5em; text-align: left; vertical-align: top;}
+        .readable-template-display th, #livePreview th { background-color: #f0f0f0; font-weight: bold; }
+        .readable-template-display ul, .readable-template-display ol,
+        #livePreview ul, #livePreview ol { padding-left: 2em; margin-bottom: 0.5em; margin-top:0.5em; }
+        .readable-template-display p, #livePreview p { margin-bottom: 0.5em; margin-top: 0.5em;}
+
+
         #vilkaarModal .modal-body, #nyVilkaarTypeModal .modal-body, #retningslinjeModal .modal-body {
             max-height: 75vh; 
             overflow-y: auto;
@@ -59,7 +73,7 @@
             font-weight: 500; 
         }
         .placeholder-missing-value {
-            color: #dc3545; /* Bootstrap danger red */
+            color: #dc3545; 
             font-style: italic;
         }
         #retningslinjeModal table { font-size: 0.9em; }
@@ -70,12 +84,11 @@
 <body>
     <div class="container">
         <header class="mb-4">
-            <h1>Vilkårsgenerator - Gen II Demo</h1>
-            <p class="lead">Demonstrasjon av en forbedret metode for å generere vilkår basert på maler med enklere placeholder-syntaks og sentralisert typekonfigurasjon.</p>
+            <h1>Vilkårsgenerator - Gen II (Markdown)</h1>
+            <p class="lead">Demonstrasjon med <code>&lt;placeholder&gt;</code> syntaks og støtte for Markdown-formatering i maler.</p>
         </header>
 
         <div class="row">
-            <!-- Venstre kolonne -->
             <div class="col-md-4">
                 <h2>Velg Vilkår</h2>
                 <div class="mb-3">
@@ -87,20 +100,18 @@
                     <div id="rawTemplatePreviewSelect" class="raw-template-preview-select p-2 border bg-light rounded" style="min-height: 50px;"></div>
                 </div>
                 <button id="leggTilVilkårKnapp" class="btn btn-primary mb-2 w-100">Fyll ut og legg til vilkår</button>
-                <button id="aapneNyVilkaarTypeModalKnapp" class="btn btn-outline-secondary w-100">Legg til egen vilkårstype</button>
+                <button id="aapneNyVilkaarTypeModalKnapp" class="btn btn-outline-secondary w-100 mb-2">Legg til egen vilkårstype</button>
+                <button type="button" class="btn btn-info w-100" id="aapneRetningslinjeModalKnappHovedside">Retningslinje for maler</button>
             </div>
 
-            <!-- Høyre kolonne -->
             <div class="col-md-8">
                 <h2>Valgte Vilkår</h2>
                 <div id="vilkaarListe" class="list-group">
-                    <!-- Vilkår legges til her -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for utfylling av vilkår -->
     <div class="modal fade" id="vilkaarModal" tabindex="-1" aria-labelledby="vilkaarModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -109,9 +120,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Lukk"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="vilkaarSkjema">
-                        <!-- Skjemafelt genereres her -->
-                    </form>
+                    <form id="vilkaarSkjema"></form>
                     <hr>
                     <h5>Live forhåndsvisning (lesbar):</h5>
                     <div id="livePreview" class="p-2 border bg-light rounded"></div>
@@ -126,7 +135,6 @@
         </div>
     </div>
 
-    <!-- Modal for å legge til ny vilkårstype -->
     <div class="modal fade" id="nyVilkaarTypeModal" tabindex="-1" aria-labelledby="nyVilkaarTypeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg"> 
             <div class="modal-content">
@@ -142,14 +150,14 @@
                             <div class="error-message" id="nyVilkaarNavnError"></div>
                         </div>
                         <div class="mb-3">
-                            <label for="nyVilkaarTemplate" class="form-label">Vilkårsråtekst (template):</label>
+                            <label for="nyVilkaarTemplate" class="form-label">Vilkårsråtekst (template med Markdown):</label>
                             <textarea class="form-control" id="nyVilkaarTemplate" rows="5" required></textarea>
                             <div class="error-message" id="nyVilkaarTemplateError"></div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-info" id="aapneRetningslinjeModalKnapp">Retningslinje for maler</button>
+                    <button type="button" class="btn btn-info" id="aapneRetningslinjeModalKnappNyType">Retningslinje for maler</button>
                     <div>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
                         <button type="button" id="lagreNyVilkaarTypeKnapp" class="btn btn-primary">Legg til</button>
@@ -159,7 +167,6 @@
         </div>
     </div>
 
-    <!-- Modal for Retningslinjer -->
     <div class="modal fade" id="retningslinjeModal" tabindex="-1" aria-labelledby="retningslinjeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl"> 
             <div class="modal-content">
@@ -168,7 +175,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Lukk"></button>
                 </div>
                 <div class="modal-body" id="retningslinjeInnhold">
-                    <!-- Innhold fylles av JavaScript -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Lukk</button>
@@ -179,20 +185,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- DATAMODELLER ---
+        // --- DATAMODELLER (med < > placeholders) ---
         let vilkaarstyper = [ 
-            { id: "konsesjonsavgifter", label: "Konsesjonsavgifter", template: "Det skal betales en årlig avgift til staten på <beløp valuta='kr'> pr. nat.hk og de kommuner og fylkeskommuner som Kongen bestemmer på <beløp valuta='kr'> pr. nat.hk. Satsene refererer seg til det som opprinnelig ble fastsatt ved kgl.res. av <dato format='dd.mm.åååå'>."},
+            { id: "konsesjonsavgifter", label: "Konsesjonsavgifter", template: "Det skal betales en **årlig avgift** til staten på <beløp valuta='kr'> pr. nat.hk og de kommuner og fylkeskommuner som Kongen bestemmer på <beløp valuta='kr'> pr. nat.hk.\n\nSatsene refererer seg til det som opprinnelig ble fastsatt ved kgl.res. av <dato format='dd.mm.åååå'>."},
             { id: "minstevannforing", label: "Minstevannsføring inntak", template: "Det skal for kraftanlegg <anlegg type='vannkraft'> slippes en <vannføring type='minstevannføring' metrikk='l/s'> hele året."},
             { id: "maksimalhoyde", label: "Utforming, maksimal høyde", template: "Maksimal høyde på vindkraftsanlegg <anlegg type='vindkraft'> er <høyde type='maksimal høyde over bakken' metrikk='meter over bakken'>."},
-            { id: "byggefrister", label: "Byggefrister", template: "Arbeidet med det konsesjonsgitte tiltaket må påbegynnes innen <frist metrikk='år' min=1 max=10> fra konsesjonen ble gitt og fullføres innen ytterligere <frist metrikk='år' min=1 max=10>. Fristene kan forlenges av NVE. I fristene medregnes ikke den tid som på grunn av ekstraordinære forhold (force majeure) har vært umulig å utnytte."},
-            { id: "bygging", label: "Bygging", template: "Anlegget skal være ferdigstilt, bygget i henhold til denne konsesjonen og satt i drift innen <frist metrikk='år' min=2 max=10> fra endelig konsesjon. Konsesjonæren kan søke om forlengelse av fristen for ferdigstillelse, bygging og idriftsettelse. Slik søknad skal sendes senest seks måneder før utløpet av fristen. Konsesjonen bortfaller dersom fristen for bygging, ferdigstillelse og idriftsettelse ikke overholdes."},
-            { id: "endring", label: "Endring av konsesjon", template: "NVE kan fastsette nye vilkår for anlegget dersom det foreligger sterke samfunnsmessige interesser."},
-			{ id: "tappevann", label: "Tappe vann", template: "<anlegg type='vannkraft'> gis løyve til å tappe inntil <slukeevne metrikk='l/s'> i sommerhalvåret og <slukeevne metrikk='l/s'> i vinterhalvåret fra elva <elv>."},
-            { id: "regulering_vannstand", label: "Regulering av vannstand", template: "Konsesjonær er pliktig til å regulere vannstanden i <innsjø> mellom høyeste regulerte vannstand (HRV) <vannstand metrikk='moh' type='høyeste'> og laveste regulerte vannstand (LRV) <vannstand metrikk='moh' type='laveste'>. Brudd på dette vilkåret bøtelegges med <beløp valuta='kr'> per dag."},
-			{ id: "detaljplan", label: "Detaljplan", template: "Anlegget skal bygges, drives, vedlikeholdes og nedlegges i henhold til en detaljplan som utarbeides av konsesjonæren og godkjennes av NVE før anleggsstart. Planen skal utarbeides i samsvar med NVEs veileder om utarbeidelse av detaljplan for anlegg med konsesjon etter energiloven. <aktør> skal utarbeide planen i kontakt med berørt kommune, grunneiere og andre rettighetshavere. Planen skal gjøres kjent for entreprenører. Konsesjonæren har ansvaret for at planen følges.				Anlegget skal til enhver tid holdes i tilfredsstillende driftsmessig stand i henhold til detaljplanen og eventuelt andre vilkår/planer.	Konsesjonæren skal foreta en forsvarlig opprydding og istandsetting av anleggsområdene, som skal være ferdig senest to år etter at anlegget eller deler av anlegget er satt i drift."},
+            { id: "byggefrister", label: "Byggefrister", template: "Arbeidet med det konsesjonsgitte tiltaket må påbegynnes innen <frist metrikk='år' min=1 max=10> fra konsesjonen ble gitt og fullføres innen ytterligere <frist metrikk='år' min=1 max=10>.\n\n**Fristforlengelse:**\nFristene kan forlenges av NVE.\n\n*Merk: I fristene medregnes ikke den tid som pga. force majeure har vært umulig å utnytte.*"},
+            { id: "tabell_eksempel", label: "Tabell Eksempel", template: "# Prisliste\n\nHer er en oversikt over kostnader:\n\n|| Tjeneste || Pris || Enhet ||\n| Standardpakke | <beløp valuta='kr'> | per år |\n| Utvidet support | <beløp valuta='kr'> | per mnd |\n\nAlle priser er eks. mva."},
+            { id: "endring", label: "Endring av konsesjon", template: "NVE kan fastsette nye vilkår for anlegget dersom det foreligger *sterke* samfunnsmessige interesser."},
+			{ id: "tappevann", label: "Tappe vann", template: "<anlegg type='vannkraft'> gis løyve til å tappe inntil <slukeevne metrikk='l/s' type='sommer'> i sommerhalvåret og <slukeevne metrikk='l/s' type='vinter'> i vinterhalvåret fra elva <elv>."},
+            { 
+                id: "regulering_vannstand_ny", 
+                label: "Regulering av vannstand (m/ tabell)", 
+                template: "Konsesjonær er **pliktig** til å *regulere* vannstanden i <innsjø> som følger:\n|| Årstid || Høyeste regulerte vannstand (HRV) || Laveste regulerte vannstand (LRV) ||\n| **Sommer (15.05–15.09)** | <vannstand metrikk='moh' type='høyeste'> | <vannstand metrikk='moh' type='laveste'> |\n| **Vinter (16.09–14.05)** | <vannstand metrikk='moh' type='høyeste_vinter'> | <vannstand metrikk='moh' type='laveste_vinter'> |\n\n**Bøtesats: <beløp valuta='kr'> per dag.**"
+            },
+			{ id: "detaljplan", label: "Detaljplan", template: "Detaljplan utarbeides av <aktør> og godkjennes av NVE. Planen skal følge NVEs veileder."},
             { id: "tilbakekallelse", label: "Tilbakekallelse av konsesjon", template: "Konsesjonen kan trekkes tilbake dersom konsesjonæren tas under konkursbehandling, …"}
         ];
-
+        // ... (fiktiveAnlegg, fiktiveElver, fiktiveInnsjoer, aktørerData, kjenteTagTyper, dataKilder som før) ...
         const fiktiveAnlegg = [
           { id: 9601,  navn: "Nye Aunfoss kraftverk", type: "vannkraft" }, { id: 9600, navn: "Nye Tunnsjødal kraftverk", type: "vannkraft" },
           { id: 8804, navn: "Langerud koblingsstasjon og kaianlegg", type: "kraftledning" }, { id: 284, navn: "Råholt – Fjernvarmeanlegg", type: "fjernvarme" },
@@ -203,7 +213,6 @@
           { id: 20411, navn: "Slettefjellet solkraftverk", type: "solkraft" }, { id: 19376, navn: "Hensåsen solkraftverk", type: "solkraft" },
           { id: 20500, navn: "Toppåsen Vindkraftpark", type: "vindkraft" }, { id: 20501, navn: "Indredal vifter og strøm", type: "vindkraft" }
         ];
-        
         const fiktiveElver = [
             { id: 1, navn: "Glomma" }, { id: 2, navn: "Pasvikelva og Ivalojoki" }, { id: 3, navn: "Numedalslågen" }, 
             { id: 4, navn: "Gudbrandsdalslågen og Vorma" }, { id: 5, navn: "Tana" }, { id: 6, navn: "Drammensvassdraget" },
@@ -213,7 +222,6 @@
             { id: 16, navn: "Vefsna" }, { id: 17, navn: "Nea-Nidelvvassdraget" }, { id: 18, navn: "Gaula" },
             { id: 19, navn: "Målselva" }, { id: 20, navn: "Karasjohka" }
         ];
-
         const fiktiveInnsjoer = [ 
             { id: 101, navn: "Mjøsa" }, { id: 102, navn: "Røssvatnet" }, { id: 103, navn: "Femunden" }, 
             { id: 104, navn: "Randsfjorden" }, { id: 105, navn: "Tyrifjorden" }, { id: 106, navn: "Snåsavatnet" },
@@ -224,14 +232,12 @@
             { id: 119, navn: "Storglomvatnet" }, { id: 120, navn: "Aursunden" }
         ];
         const aktørerData = [{id: "Konsesjonær", navn: "Konsesjonær"}, {id: "Tiltakshaver", navn: "Tiltakshaver"}];
-
         const kjenteTagTyper = {
             "anlegg": { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveAnlegg", idAttr: "id", navnAttr: "navn" },
             "aktør":  { kategori: "entitet", uiType: "dropdown", dataSourceName: "aktørerData", idAttr: "id", navnAttr: "navn" },
             "elv":    { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveElver", idAttr: "id", navnAttr: "navn" },
             "innsjø": { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveInnsjoer", idAttr: "id", navnAttr: "navn" },
             "dam":    { kategori: "entitet", uiType: "dropdown", dataSourceName: "fiktiveInnsjoer", idAttr: "id", navnAttr: "navn" }, 
-            
             "beløp":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "valuta" },
             "dato":       { kategori: "parameter", uiType: "datePicker", standardFormatAttr: "format" },
             "frist":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
@@ -241,8 +247,8 @@
             "høyde":      { kategori: "parameter", uiType: "numberInput", standardMetrikkAttr: "metrikk" },
             "tekstfelt":  { kategori: "parameter", uiType: "textInput" }
         };
-
         const dataKilder = { fiktiveAnlegg, fiktiveElver, fiktiveInnsjoer, aktørerData };
+
 
         let currentTemplateString = '';
         let currentPlaceholdersData = []; 
@@ -256,7 +262,7 @@
 
         function escapeHtmlMinimal(unsafe) {
             if (typeof unsafe !== 'string') return unsafe;
-            return unsafe.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
         function unescapeHtmlEntities(escapedHtml) {
             if (typeof escapedHtml !== 'string') return escapedHtml;
@@ -286,6 +292,68 @@
             return `${currencySymbol} ${formattedNum},-`;
         }
 
+        function convertMarkdownToHtml(md) {
+            if (typeof md !== 'string') return '';
+            let html = md;
+
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            let inTable = false;
+            html = html.split('\n').map(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('||') && trimmedLine.endsWith('||')) {
+                    const headers = trimmedLine.slice(2, -2).split('||').map(h => {
+                        const headerContent = h.trim();
+                        return `<th>${headerContent.startsWith('<span') ? headerContent : escapeHtmlMinimal(headerContent)}</th>`;
+                    }).join('');
+                    let tableStart = '';
+                    if (!inTable) {
+                        tableStart = '<table>';
+                        inTable = true;
+                    } else { 
+                        tableStart = '</tbody></table><table>';
+                    }
+                    return `${tableStart}<thead><tr>${headers}</tr></thead><tbody>`;
+                } else if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && inTable) {
+                    const cells = trimmedLine.slice(1, -1).split('|').map(c => {
+                        const cellContent = c.trim();
+                        return `<td>${cellContent.startsWith('<span') ? cellContent : escapeHtmlMinimal(cellContent)}</td>`;
+                    }).join('');
+                    return `<tr>${cells}</tr>`;
+                } else {
+                    let prefix = '';
+                    if (inTable && trimmedLine !== '') { 
+                        prefix = '</tbody></table>';
+                        inTable = false;
+                    }
+                    return prefix + line; 
+                }
+            }).join('\n');
+            if (inTable) html += '</tbody></table>';
+
+            html = html.replace(/ {2,}\n/g, '<br>\n');
+            html = html.replace(/^((\s*[-*+] (.*)(\n|$))+)/gim, (match) => {
+                const items = match.split('\n').filter(item => item.trim() !== '').map(item => `<li>${escapeHtmlMinimal(item.trim().substring(2))}</li>`).join('');
+                return `<ul>${items}</ul>`;
+            });
+             html = html.replace(/^((\s*\d+\. (.*)(\n|$))+)/gim, (match) => {
+                const items = match.split('\n').filter(item => item.trim() !== '').map(item => `<li>${escapeHtmlMinimal(item.trim().substring(item.indexOf('.') + 1).trim())}</li>`).join('');
+                return `<ol>${items}</ol>`;
+            });
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/__(.*?)__/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/_(.*?)_/g, '<em>$1</em>');
+            
+            html = html.replace(/\n{2,}/g, '</p><p>'); 
+            html = `<p>${html}</p>`; 
+            html = html.replace(/<p>\s*<\/p>/gi, ''); 
+            html = html.replace(/<p>(<(h[1-6]|ul|ol|table|blockquote|pre|hr)>)/gi, '$1'); 
+            html = html.replace(/(<\/(h[1-6]|ul|ol|table|blockquote|pre|hr)>)<\/p>/gi, '$1');
+            html = html.replace(/<p><br\s*\/?>\s*<\/p>/gi, '<br>'); 
+
+            return html;
+        }
+
         function parseRawPlaceholders(template) {
             const placeholders = [];
             const placeholderRegex = /<([^>\s]+)\s*([^>]*)>/g; 
@@ -309,9 +377,8 @@
                          attributes[kjentTypeInfo.idAttr] = '';
                     }
                 } 
-                else if (!attributes.hasOwnProperty('verdi') && 
-                         ((kjentTypeInfo && kjentTypeInfo.kategori === 'parameter') || !kjentTypeInfo)) {
-                     attributes.verdi = ''; 
+                else if (!attributes.hasOwnProperty('verdi')) { // For alle andre (parameter eller ukjent)
+                     attributes.verdi = ''; // Anta at 'verdi' trengs hvis ikke spesifisert
                 }
                 placeholders.push({ raw, tagName, attributes, originalIndex: placeholderIndex++ });
             }
@@ -323,7 +390,7 @@
             const selectedType = vilkaarstyper.find(type => type.id === selectedTypeId);
             const previewDiv = document.getElementById('rawTemplatePreviewSelect');
             if (selectedType) {
-                previewDiv.innerHTML = selectedType.template.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
+                previewDiv.textContent = selectedType.template;
             } else { previewDiv.innerHTML = ''; }
         }
 
@@ -599,7 +666,7 @@
                 const phStartIndexInSegment = match.index;
                 const phActualStartIndex = lastIndex + phStartIndexInSegment;
                 
-                segments.push(readable ? escapeHtmlMinimal(templateString.substring(lastIndex, phActualStartIndex)) : templateString.substring(lastIndex, phActualStartIndex));
+                segments.push(readable ? templateString.substring(lastIndex, phActualStartIndex) : escapeHtmlMinimal(templateString.substring(lastIndex, phActualStartIndex)));
                 
                 let replacementContent = '';
                 const kjentTypeInfo = kjenteTagTyper[livePhData.tagName];
@@ -660,7 +727,7 @@
                         else {
                              displayValue = `[${livePhData.tagName}]`; 
                         }
-                        replacementContent = escapeHtmlMinimal(unescapeHtmlEntities(displayValue));
+                        replacementContent = escapeHtmlMinimal(unescapeHtmlEntities(displayValue)); 
                     }
                     
                     if (withColor && isFilledValue && !replacementContent.includes('placeholder-missing-value') && String(replacementContent).trim() !== '' && !replacementContent.startsWith('[') && !replacementContent.startsWith('?')) {
@@ -676,13 +743,22 @@
                         }
                     }
                     newTag += '>';
-                    replacementContent = escapeHtmlMinimal(newTag);
+                    replacementContent = escapeHtmlMinimal(newTag); 
                 }
                 segments.push(replacementContent);
                 lastIndex = phActualStartIndex + origPhStruct.raw.length;
             });
-            segments.push(readable ? escapeHtmlMinimal(templateString.substring(lastIndex)) : templateString.substring(lastIndex));
-            return segments.join('');
+            if (readable) {
+                segments.push(templateString.substring(lastIndex));
+            } else {
+                 segments.push(escapeHtmlMinimal(templateString.substring(lastIndex)));
+            }
+            
+            let joinedSegments = segments.join('');
+            if(readable) {
+                return convertMarkdownToHtml(joinedSegments);
+            }
+            return joinedSegments;
         }
         
         function updateLivePreview() { 
@@ -692,8 +768,21 @@
             }
             const rawPreviewDiv = document.getElementById('rawPreview');
             if (rawPreviewDiv) {
-                let rawHtml = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
-                rawPreviewDiv.innerHTML = rawHtml.replace(/&#039;/g, "'").replace(/&apos;/g, "'"); 
+                let rawOutput = currentTemplateString;
+                const sortedPlaceholders = [...currentPlaceholdersData].sort((a,b) => b.raw.length - a.raw.length); 
+
+                sortedPlaceholders.forEach(ph => {
+                    let newTag = `<${ph.tagName}`;
+                     for (const attrKey in ph.attributes) {
+                        if (ph.attributes.hasOwnProperty(attrKey) && ph.attributes[attrKey] !== undefined) {
+                            let val = ph.attributes[attrKey];
+                            newTag += ` ${attrKey}='${escapeHtmlMinimal(String(val))}'`;
+                        }
+                    }
+                    newTag += '>';
+                    rawOutput = rawOutput.split(ph.raw).join(newTag);
+                });
+                rawPreviewDiv.textContent = rawOutput;
             }
         }
         
@@ -708,7 +797,7 @@
             let requiresModal = initialPlaceholders.some(ph => {
                 const kjentType = kjenteTagTyper[ph.tagName];
                 if (kjentType && kjentType.kategori === 'entitet') {
-                    return ph.attributes.navn === '' || (kjentType.idAttr && ph.attributes[kjentType.idAttr] === '');
+                    return ph.attributes.navn === ''; 
                 }
                 return ph.attributes.valg || ph.attributes.verdi === '';
             });
@@ -731,11 +820,11 @@
                 `;
                 listItem.querySelector('.readable-template-display').innerHTML = readableHtml;
 
-                const rawTextForTooltip = generateTextFromTemplate(currentTemplateString, initialPlaceholders, false)
-                                            .replace(/&lt;/g, '<').replace(/>/g, '>').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
+                const rawTextForTooltip = generateTextFromTemplate(currentTemplateString, initialPlaceholders, false);
                 listItem.dataset.bsToggle = "tooltip";
                 listItem.dataset.bsPlacement = "left";
-                listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${escapeHtmlMinimal(rawTextForTooltip)}</div>`;
+                listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${rawTextForTooltip}</div>`;
+
 
                 listItem.querySelector('.delete-vilkaar-btn').addEventListener('click', () => {
                     const tooltipInstance = bootstrap.Tooltip.getInstance(listItem); 
@@ -764,7 +853,7 @@
 
             const readableHtmlForDisplay = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, true, true, false); 
             const logicalRawString = generateTextFromTemplate(currentTemplateString, currentPlaceholdersData, false);
-            const rawTextForTooltip = logicalRawString.replace(/&lt;/g, '<').replace(/>/g, '>').replace(/&#039;/g, "'").replace(/&apos;/g, "'");
+            const rawTextForTooltip = logicalRawString; 
 
             listItem.innerHTML = `
                 <div class="vilkaar-item-header">
@@ -777,7 +866,7 @@
 
             listItem.dataset.bsToggle = "tooltip";
             listItem.dataset.bsPlacement = "left";
-            listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${escapeHtmlMinimal(rawTextForTooltip)}</div>`;
+            listItem.dataset.bsTitle = `<div style='text-align:left;'><strong>Råtekst:</strong><br>${rawTextForTooltip}</div>`;
 
             listItem.querySelector('.delete-vilkaar-btn').addEventListener('click', () => {
                 const tooltipInstance = bootstrap.Tooltip.getInstance(listItem);
@@ -809,22 +898,21 @@
         const nyVilkaarNavnError = document.getElementById('nyVilkaarNavnError');
         const nyVilkaarTemplateError = document.getElementById('nyVilkaarTemplateError');
         const lagreNyVilkaarTypeKnapp = document.getElementById('lagreNyVilkaarTypeKnapp');
-        const defaultNyVilkaarTemplate = "Eksempel vilkår: <anlegg type='vannkraft'> er kun tillatt å hente vann fra vassdrag <elv>.";
+        const defaultNyVilkaarTemplate = "Eksempel vilkår: <anlegg type='vannkraft'> er kun tillatt å hente vann fra vassdrag <elv>."; 
 
         function setRetningslinjeInnhold() {
             const innhold = `
-                <h4>Guide for å Lage Nye Vilkårstyper (Vilkårsgenerator Gen II - Forenklet)</h4>
-                <p>Denne guiden hjelper deg å definere nye vilkårstyper ved å skrive en mal-tekst med spesielle placeholders (tagger). Systemet vil tolke disse taggene for å lage et brukervennlig skjema for utfylling.</p>
+                <h4>Guide for å Lage Nye Vilkårstyper (Vilkårsgenerator Gen II - Markdown)</h4>
+                <p>Bruk <code>&lt;placeholder&gt;</code> for dynamiske verdier. Enkel Markdown og noe HTML (<code>&lt;br&gt;</code>) kan brukes i teksten utenfor placeholders for formatering.</p>
                 <h5>1. Grunnleggende Struktur</h5>
-                <p>En mal består av tekst blandet med placeholders: <code>&lt;tagnavn attributt='verdi'&gt;</code>.</p>
-                <p>Eksempel: <code>Det skal betales &lt;beløp valuta='kr'&gt; til staten.</code></p>
+                <p>Eksempel: <code>Det skal betales &lt;beløp valuta='kr'&gt; til **staten**.</code></p>
                 <h5>2. Hovedkategorier av Tagger</h5>
                 <ul>
-                    <li><strong>Entitets-Tags:</strong> For "ting" (<code>anlegg</code>, <code>aktør</code>, <code>elv</code>, <code>innsjø</code>, <code>dam</code>). Gir vanligvis en dropdown.</li>
-                    <li><strong>Parameter-Tags:</strong> Alle andre tagger (<code>beløp</code>, <code>dato</code>, <code>frist</code>, egne). Gir vanligvis et input-felt.</li>
+                    <li><strong>Entitets-Tags:</strong> For "ting" (<code>anlegg</code>, <code>aktør</code>, <code>elv</code>, <code>innsjø</code>, <code>dam</code>). Gir vanligvis en dropdown hvis <code>navn</code>-attributtet er utelatt eller tomt.</li>
+                    <li><strong>Parameter-Tags:</strong> Alle andre tagger (<code>beløp</code>, <code>dato</code>, <code>frist</code>, egne). Gir vanligvis et input-felt hvis <code>verdi</code>-attributtet er utelatt eller tomt.</li>
                 </ul>
                 <h5>3. Entitets-Tags</h5>
-                <p>Systemet lager en dropdown hvis <code>navn</code> (og <code>id</code> for <code>anlegg</code>/<code>aktør</code>) mangler i malen. For å låse verdien, spesifiser <code>navn</code> (og evt. <code>id</code>).</p>
+                <p>For å få en dropdown for brukeren, utelat <code>navn</code> (og evt. <code>id</code> for anlegg/aktør). For å låse verdien, spesifiser <code>navn</code>.</p>
                 <table class="table table-sm table-bordered">
                     <thead class="table-light"><tr><th>Tag</th><th>For Brukervalg (Dropdown)</th><th>For Fastsatt Verdi (Låst)</th></tr></thead>
                     <tbody>
@@ -835,10 +923,10 @@
                         <tr><td><code>dam</code></td><td><code>&lt;dam&gt;</code></td><td><code>&lt;dam navn='Røssvatnet dam'&gt;</code></td></tr>
                     </tbody>
                 </table>
-                <p>Attributtet <code>type</code> kan brukes på <code>&lt;anlegg&gt;</code> for å filtrere dropdown (f.eks. <code>type='vindkraft'</code>).</p>
+                <p>Attributtet <code>type</code> kan brukes på <code>&lt;anlegg&gt;</code> for å filtrere dropdown.</p>
 
                 <h5>4. Parameter-Tags</h5>
-                <p>Systemet lager et inputfelt for <code>verdi</code> hvis det ikke er spesifisert i malen. For å låse verdien, skriv <code>verdi='dinVerdi'</code>.</p>
+                <p>Systemet lager et inputfelt for <code>verdi</code> hvis det ikke er spesifisert. For å låse verdien, skriv <code>verdi='dinVerdi'</code>.</p>
                 <table class="table table-sm table-bordered">
                     <thead class="table-light"><tr><th>Eksempel i Mal</th><th>Resultat i UI</th></tr></thead>
                     <tbody>
@@ -851,11 +939,15 @@
                     </tbody>
                 </table>
                 <p>Bruk <code>metrikk</code> (eller <code>valuta</code>), <code>format</code>, <code>min</code>, <code>max</code>, <code>valg='a|b'</code>, og <code>type</code> for å konfigurere feltet.</p>
-                <h5>5. Tips</h5>
+                <h5>5. Markdown & HTML Formatering</h5>
                 <ul>
-                    <li>For entiteter som skal velges av bruker: skriv kun tag-navnet (f.eks. <code>&lt;elv&gt;</code>).</li>
-                    <li>For parametere som skal fylles ut: skriv tag-navnet med evt. metadata (f.eks. <code>&lt;beløp valuta='kr'&gt;</code>).</li>
-                    <li>For faste verdier: angi verdien i taggen (f.eks. <code>&lt;elv navn='Nidelva'&gt;</code>).</li>
+                    <li><code>**Fet tekst**</code> &rarr; <strong>Fet tekst</strong></li>
+                    <li><code>*Kursiv tekst*</code> &rarr; <em>Kursiv tekst</em></li>
+                    <li><code># Overskrift 1</code> &rarr; Større overskrift</li>
+                    <li><code>## Overskrift 2</code> &rarr; Mindre overskrift</li>
+                    <li><code>- Punkt 1<br>- Punkt 2</code> &rarr; Punktliste (bruk <code style="white-space:pre;">  \n</code> for linjeskift i Markdown for <code style="white-space:pre;">&lt;br&gt;</code>, eller doble linjeskift for <code style="white-space:pre;">&lt;p&gt;</code>)</li>
+                    <li><code>1. Punkt 1<br>2. Punkt 2</code> &rarr; Nummerert liste</li>
+                    <li>Tabeller: <br><code>|| Hode1 || Hode2 ||</code><br><code>| R1C1 | R1C2 |</code><br><code>| R2C1 | R2C2 |</code></li>
                 </ul>
             `;
             document.getElementById('retningslinjeInnhold').innerHTML = innhold;
@@ -879,11 +971,17 @@
             lagreNyVilkaarTypeKnapp.disabled=true;nyVilkaarTypeModalInstance.show();
         });
 
-        document.getElementById('aapneRetningslinjeModalKnapp').addEventListener('click', () => {
+        document.getElementById('aapneRetningslinjeModalKnappNyType').addEventListener('click', () => {
             setRetningslinjeInnhold(); 
             if(!retningslinjeModalInstance) retningslinjeModalInstance = new bootstrap.Modal(document.getElementById('retningslinjeModal'));
             retningslinjeModalInstance.show();
         });
+         document.getElementById('aapneRetningslinjeModalKnappHovedside').addEventListener('click', () => {
+            setRetningslinjeInnhold(); 
+            if(!retningslinjeModalInstance) retningslinjeModalInstance = new bootstrap.Modal(document.getElementById('retningslinjeModal'));
+            retningslinjeModalInstance.show();
+        });
+
 
         lagreNyVilkaarTypeKnapp.addEventListener('click', () => {
             if(!validateNyVilkaarTypeForm())return;
